@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"secondary":"#4cd7f6","on-secondary-fixed-variant":"#004e5c","surface-container-low":"#161c23","on-background":"#dde3ed","surface-container":"#1a2027","on-secondary-fixed":"#001f26","primary-container":"#10b981","on-tertiary-fixed-variant":"#653e00","on-error":"#690005","primary":"#4edea3","surface-variant":"#2f353d","on-primary-container":"#00422b","surface-container-high":"#242a32","surface":"#0e141b","secondary-fixed-dim":"#4cd7f6","background":"#0e141b","inverse-surface":"#dde3ed","surface-dim":"#0e141b","surface-container-highest":"#2f353d","on-secondary":"#003640","outline":"#86948a","on-tertiary-fixed":"#2a1700","on-primary-fixed":"#002113","inverse-on-surface":"#2b3139","primary-fixed-dim":"#4edea3","on-primary-fixed-variant":"#005236","on-primary":"#003824","primary-fixed":"#6ffbbe","tertiary-fixed-dim":"#ffb95f","inverse-primary":"#006c49","surface-container-lowest":"#090f15","error-container":"#93000a","on-tertiary":"#472a00","on-tertiary-container":"#523200","error":"#ffb4ab","on-secondary-container":"#00424e","secondary-fixed":"#acedff","surface-bright":"#343a41","tertiary-container":"#e29100","on-error-container":"#ffdad6","secondary-container":"#03b5d3","surface-tint":"#4edea3","outline-variant":"#3c4a42","tertiary-fixed":"#ffddb8","on-surface-variant":"#bbcabf","tertiary":"#ffb95f","on-surface":"#dde3ed"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-xl":"2.5rem","space-xs":"0.25rem","space-lg":"1.5rem","margin-md":"1.5rem","gutter":"1rem","gutter-lg":"1.5rem","space-sm":"0.5rem","space-md":"1rem","margin-lg":"2rem","margin":"1rem"},"fontFamily":{"headline-lg":["Space Grotesk"],"display-lg-mobile":["Space Grotesk"],"label-mono-md":["JetBrains Mono"],"title-md":["Inter"],"body-sm":["Inter"],"body-lg":["Inter"],"telemetry-value":["JetBrains Mono"],"headline-sm":["Space Grotesk"],"headline-lg-mobile":["Space Grotesk"],"body-md":["Inter"],"label-mono-sm":["JetBrains Mono"],"display-lg":["Space Grotesk"]},"fontSize":{"headline-lg":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"display-lg-mobile":["2.25rem",{"lineHeight":"2.75rem","letterSpacing":"-0.02em","fontWeight":"700"}],"label-mono-md":["0.8125rem",{"lineHeight":"1.125rem","letterSpacing":"0.04em","fontWeight":"500"}],"title-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"400"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"0em","fontWeight":"400"}],"telemetry-value":["1.5rem",{"lineHeight":"1.75rem","letterSpacing":"-0.02em","fontWeight":"500"}],"headline-sm":["1.25rem",{"lineHeight":"1.75rem","letterSpacing":"0em","fontWeight":"600"}],"headline-lg-mobile":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.01em","fontWeight":"600"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0.01em","fontWeight":"400"}],"label-mono-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.06em","fontWeight":"500"}],"display-lg":["3rem",{"lineHeight":"3.5rem","letterSpacing":"-0.03em","fontWeight":"700"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest/95 backdrop-blur-xl z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.3)]"><div class="flex flex-col"><div class="px-margin py-space-md flex items-center gap-space-sm bg-surface-container-low/40"><img alt="HeatShield AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-1oys2LEtqtSp7YsV1Io5fewtgE2wBht7b3GqDz52V_wkt_ZPzJ1d2fvJc0w7vu8xieO3eGpv38M4JM57-iwIq0UzwmFFRseiib6cbIHENqKbJPUjDzvjVe6fh6YUy3nXFUyfX2y1-IJIzwf_odfNx8IJvVk9mO_Vn7Y30hgKjXOBIaHPYwFGXFfXo6kxv7wJPLRFOVF86QolBsiWpiSv6hlslCnc5M8ixUZMwZfTGB-E9EErlN4fzQ"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface truncate">HeatShield AI</span><span class="font-label-mono-sm text-label-mono-sm uppercase text-secondary tracking-wider truncate">Detect • Decide • Protect</span></div></div><div class="px-space-md pt-space-md pb-space-xs"><span class="font-label-mono-sm text-label-mono-sm text-outline uppercase tracking-widest px-space-xs">Operations Deck</span></div><nav class="flex flex-col px-space-sm gap-space-xs" data-active-classes="bg-surface-container-high text-primary font-title-md shadow-[inset_3px_0_0_0_#4edea3,0_0_16px_rgba(16,185,129,0.15)]"><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg transition-all group bg-surface-container-high text-primary font-title-md shadow-[inset_3px_0_0_0_#4edea3,0_0_16px_rgba(16,185,129,0.15)]" data-path="overview" href="#"><span class="material-symbols-outlined text-primary group-hover:text-primary">grid_view</span><span class="font-body-md text-body-md">Overview</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="environmental-map" href="#"><span class="material-symbols-outlined group-hover:text-secondary">map</span><span class="font-body-md text-body-md">Environmental Map</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="analyze-report" href="#"><span class="material-symbols-outlined group-hover:text-secondary">analytics</span><span class="font-body-md text-body-md">Analyze Report</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="decision-history" href="#"><span class="material-symbols-outlined group-hover:text-secondary">history</span><span class="font-body-md text-body-md">Decision History</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="documentation" href="#"><span class="material-symbols-outlined group-hover:text-secondary">menu_book</span><span class="font-body-md text-body-md">Documentation</span></a></nav></div><div class="p-space-md m-space-sm rounded-lg bg-surface-container-low/80 backdrop-blur-md"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">System Matrix</span><span class="flex h-2 w-2 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span></span></div><div class="space-y-space-xs"><div class="flex justify-between items-center"><span class="font-body-sm text-body-sm text-on-surface-variant">Grid State</span><span class="font-label-mono-sm text-label-mono-sm text-primary">NOMINAL</span></div><div class="flex justify-between items-center"><span class="font-body-sm text-body-sm text-on-surface-variant">Active Nodes</span><span class="font-label-mono-sm text-label-mono-sm text-secondary">1,428 / 1,430</span></div><div class="flex justify-between items-center"><span class="font-body-sm text-body-sm text-on-surface-variant">Sensors Sync</span><span class="font-label-mono-sm text-label-mono-sm text-primary">0.4s ago</span></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface-container-lowest/80 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.25)] flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-lg min-w-0"><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight whitespace-nowrap">Urban Climate &amp; Heat Risk Operations</span><div class="flex items-center gap-space-xs text-on-surface-variant font-label-mono-sm text-label-mono-sm"><span class="material-symbols-outlined text-outline" style="font-size:14px;">schedule</span><span class="text-secondary">LIVE TELEMETRY</span><span>•</span><span>UTC 14:32:08</span><span>•</span><span>2025-02-27</span></div></div></div><div class="flex items-center gap-space-md overflow-x-auto"><div class="hidden xl:flex items-center gap-space-md"><div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-high"><span class="h-2 w-2 rounded-full bg-primary"></span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Decider:</span><span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">Strands Decider 2B: ONLINE</span></div><div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-high"><span class="material-symbols-outlined text-secondary" style="font-size:14px;">neurology</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Bedrock LLM:</span><span class="font-label-mono-sm text-label-mono-sm text-secondary">CONNECTED (Titan/Claude 3.5 Sonnet)</span></div><div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-high"><span class="material-symbols-outlined text-primary" style="font-size:14px;">bolt</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">FastAPI v2.4:</span><span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">18ms latency</span></div></div><div class="flex items-center gap-space-sm pl-space-sm ml-space-xs"><div class="flex flex-col items-end text-right hidden md:flex"><span class="font-title-md text-title-md text-on-surface leading-tight">Dr. Aris Vance</span><span class="font-label-mono-sm text-label-mono-sm text-outline">Lead Climate Scientist</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary/40 shadow-[0_0_8px_rgba(78,222,163,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfSAGURuvWIj28g1sGh3zUcrXamEdde3gAobEItVSKCNEvTM2_5mV83eccAlDkbehk-cW7bsR7iSBoQH28tFspLtthIFC8PyP-mdinZ2U_L2KbnJbHUQk0ZFhC2245qmYAZ_BwqaDsI6ihy11rb0qJjftVJDeqUZatKo28ZUFWVLOAZ0xdOp0RgtQ9tII8oB4rWV9kjEIYYcoFAr96lNpiOTrgqRHtdB-W18kJ-uRwTt8rU70pGgQIfA"/></div></div></header><main class="relative pt-20 bg-surface min-h-screen w-full px-gutter-lg pb-space-xl"><div class="flex flex-col w-full space-y-space-lg text-on-surface">
+<!-- TOP HERO / OVERVIEW METRICS SECTION -->
+<div class="flex flex-col space-y-space-sm">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm pb-space-xs">
+<div>
+<div class="flex items-center gap-space-xs text-primary font-label-mono-sm uppercase tracking-widest">
+<span class="h-2 w-2 rounded-full bg-primary animate-ping"></span>
+<span>Tactical Environmental Resilience Telemetry</span>
+<span class="text-outline">/</span>
+<span class="text-secondary">Zone Alpha-01</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">
+          Detect the heat. Decide the response. Protect the people.
+        </h1>
+</div>
+<div class="text-right">
+<p class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">
+          Metrics reflect active staging telemetry from connected sensor arrays and FastAPI mock pipeline.
+        </p>
+</div>
+</div>
+<!-- 4 Reusable MetricCards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-gutter">
+<!-- Card 1: Monitored Locations -->
+<div class="bg-surface-container-low/90 backdrop-blur-md p-space-md rounded-xl shadow-md hover:bg-surface-container transition-all flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Monitored Locations</span>
+<span class="font-telemetry-value text-telemetry-value text-on-surface mt-space-xs">48 Metro Zones</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-primary/10 text-primary font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Nominal
+          </span>
+</div>
+<div class="mt-space-md flex items-end justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">+6 microclimates added today</span>
+<div class="w-20 h-6">
+<svg class="w-full h-full text-primary" fill="none" preserveaspectratio="none" viewbox="0 0 100 30">
+<path d="M0 25 L15 22 L30 26 L45 18 L60 14 L75 16 L90 8 L100 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0 25 L15 22 L30 26 L45 18 L60 14 L75 16 L90 8 L100 5 L100 30 L0 30 Z" fill="currentColor" fill-opacity="0.12"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Card 2: Heat-Risk Indicators -->
+<div class="bg-surface-container-low/90 backdrop-blur-md p-space-md rounded-xl shadow-md hover:bg-surface-container transition-all flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Heat-Risk Indicators</span>
+<span class="font-telemetry-value text-telemetry-value text-tertiary mt-space-xs">14 Critical Hotspots</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-tertiary/15 text-tertiary font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> Elevated Risk
+          </span>
+</div>
+<div class="mt-space-md flex items-end justify-between">
+<span class="font-body-sm text-body-sm text-tertiary">Surface temp &gt; 41.5°C threshold</span>
+<div class="w-20 h-6">
+<svg class="w-full h-full text-tertiary" fill="none" preserveaspectratio="none" viewbox="0 0 100 30">
+<path d="M0 20 L20 18 L35 24 L55 12 L70 15 L85 6 L100 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0 20 L20 18 L35 24 L55 12 L70 15 L85 6 L100 4 L100 30 L0 30 Z" fill="currentColor" fill-opacity="0.15"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Card 3: Decisions Requiring Review -->
+<div class="bg-surface-container-low/90 backdrop-blur-md p-space-md rounded-xl shadow-md hover:bg-surface-container transition-all flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Decisions Under Review</span>
+<span class="font-telemetry-value text-telemetry-value text-on-surface mt-space-xs">3 Pending Validation</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-tertiary-fixed-dim/20 text-tertiary font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">pan_tool</span> Attention Required
+          </span>
+</div>
+<div class="mt-space-md flex items-end justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">2 Human-in-the-loop gates</span>
+<div class="w-20 h-6">
+<svg class="w-full h-full text-outline" fill="none" preserveaspectratio="none" viewbox="0 0 100 30">
+<path d="M0 15 L25 15 L35 20 L55 10 L75 14 L100 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Card 4: Latest Decision Latency -->
+<div class="bg-surface-container-low/90 backdrop-blur-md p-space-md rounded-xl shadow-md hover:bg-surface-container transition-all flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Latest Decision Latency</span>
+<span class="font-telemetry-value text-telemetry-value text-secondary mt-space-xs">342 ms</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">speed</span> Optimal Speed
+          </span>
+</div>
+<div class="mt-space-md flex items-end justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Decider 2B inference + tools</span>
+<div class="w-20 h-6">
+<svg class="w-full h-full text-secondary" fill="none" preserveaspectratio="none" viewbox="0 0 100 30">
+<path d="M0 25 L20 22 L40 18 L60 12 L80 14 L100 7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0 25 L20 22 L40 18 L60 12 L80 14 L100 7 L100 30 L0 30 Z" fill="currentColor" fill-opacity="0.15"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- MAIN OPERATIONAL GRID (Split 2-Column: 2/3 and 1/3) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg">
+<!-- LEFT / CENTER MAIN COLUMN (8 of 12) -->
+<div class="lg:col-span-8 flex flex-col space-y-space-lg">
+<!-- MODULE A: Incident / Environmental Report Intake -->
+<div class="bg-surface-container-low/90 backdrop-blur-md rounded-xl p-space-md shadow-lg flex flex-col space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary">terminal</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Incident / Environmental Report Intake</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm px-space-xs py-1 rounded bg-surface-container-high text-secondary">
+            FastAPI: POST /api/v1/analyze
+          </span>
+</div>
+<!-- Quick Scenario Presets -->
+<div class="flex flex-col space-y-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Scenario Presets</span>
+<div class="flex flex-wrap gap-space-xs" id="preset-buttons">
+<button class="preset-pill px-space-sm py-1 rounded bg-surface-container-high text-primary hover:bg-primary hover:text-on-primary transition font-label-mono-sm text-label-mono-sm flex items-center gap-1 active" onclick="applyPreset(1)">
+<span class="material-symbols-outlined text-[13px]">local_fire_department</span> Downtown Heat Island Surge
+            </button>
+<button class="preset-pill px-space-sm py-1 rounded bg-surface-container-high text-on-surface-variant hover:text-primary transition font-label-mono-sm text-label-mono-sm flex items-center gap-1" onclick="applyPreset(2)">
+<span class="material-symbols-outlined text-[13px]">school</span> Eastside School District
+            </button>
+<button class="preset-pill px-space-sm py-1 rounded bg-surface-container-high text-on-surface-variant hover:text-primary transition font-label-mono-sm text-label-mono-sm flex items-center gap-1" onclick="applyPreset(3)">
+<span class="material-symbols-outlined text-[13px]">factory</span> Industrial Corridor Inversion
+            </button>
+<button class="preset-pill px-space-sm py-1 rounded bg-surface-container-high text-on-surface-variant hover:text-primary transition font-label-mono-sm text-label-mono-sm flex items-center gap-1" onclick="applyPreset(4)">
+<span class="material-symbols-outlined text-[13px]">park</span> Low Vegetation District
+            </button>
+</div>
+</div>
+<!-- Intake Form -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm">
+<div class="md:col-span-2 flex flex-col space-y-1">
+<label class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Environmental Field Dispatch Text</label>
+<textarea class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md p-space-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner resize-none" id="report-input" rows="4">URGENT: Ambient temp reaching 42.1°C with 65% humidity in Sector 7C (Downtown Core). High concentration of elderly residents and unshaded bus transit corridors. Canopy cover measured at 8.2%. Requesting immediate mitigation priority analysis.</textarea>
+</div>
+<div class="flex flex-col space-y-space-sm justify-between">
+<div class="flex flex-col space-y-1">
+<label class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Geographic Location</label>
+<select class="w-full bg-surface-container-lowest text-on-surface font-label-mono-md text-label-mono-md p-space-sm rounded-lg focus:outline-none">
+<option selected="">Sector 7C - Central Commercial &amp; Transit Hub</option>
+<option>District 4 - Eastside Unified Public Campuses</option>
+<option>Zone 12 - South Bay Industrial Basin</option>
+<option>Quadrant 9 - Hillcrest High-Albedo Residential</option>
+</select>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Telemetry Context</label>
+<div class="p-space-xs rounded bg-surface-container-lowest text-on-surface-variant font-label-mono-sm text-label-mono-sm leading-relaxed">
+                Peak: 13:00-17:30 UTC<br/>
+                Albedo: 0.12 (asphalt dominant)<br/>
+                Wind Vector: 1.4 m/s SSW
+              </div>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[16px]">verified</span>
+            Schema Payload: v2.4 JSON valid
+          </span>
+<button class="w-full sm:w-auto px-space-lg py-space-sm rounded-lg bg-primary text-on-primary font-label-mono-md text-label-mono-md uppercase tracking-wider flex items-center justify-center gap-space-sm shadow-lg hover:shadow-primary/30 transition cursor-pointer" id="run-agent-btn" onclick="triggerAgentRun()">
+<span class="material-symbols-outlined" style="font-size: 18px;">neurology</span>
+<span>Run Decider Agent (POST)</span>
+</button>
+</div>
+</div>
+<!-- MODULE B: Strands Decider 2B Intelligence Panel (Visual Anchor) -->
+<div class="bg-surface-container-low/95 backdrop-blur-md rounded-xl p-space-md shadow-xl flex flex-col space-y-space-md relative overflow-hidden">
+<!-- Subtle tactical corner indicator -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none"></div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary">psychology_alt</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Strands Decider 2B Decision Engine</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline uppercase tracking-wider">
+            Action Classification &amp; Gating
+          </span>
+</div>
+<!-- Highlight Action Banner -->
+<div class="p-space-md rounded-lg bg-surface-container-high/90 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(78,222,163,0.3)]">
+<span class="material-symbols-outlined text-[28px]">flare</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Selected Action:</span>
+<span class="font-label-mono-md text-label-mono-md font-bold text-primary tracking-wide">ANALYZE_HEAT</span>
+<span class="h-2 w-2 rounded-full bg-primary animate-ping"></span>
+</div>
+<div class="flex items-center gap-space-sm mt-1">
+<span class="px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-mono-sm text-label-mono-sm font-bold">
+                  94.8% Confidence
+                </span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">
+                  Latency: 118 ms (Decider 2B)
+                </span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">
+                  Execution-gate: PASSED (≥85%)
+                </span>
+</div>
+<p class="font-label-mono-sm text-label-mono-sm text-outline mt-1 italic">
+                * Confidence reflects statistical classification margin, not absolute ground-truth guarantee.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs self-stretch md:self-auto justify-end">
+<span class="px-space-sm py-1 rounded bg-primary/10 text-primary font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Gated to Tools
+            </span>
+</div>
+</div>
+<!-- Action Space Visualization: Candidate Actions Matrix -->
+<div class="flex flex-col space-y-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Candidate Action Space Distribution</span>
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-space-xs">
+<!-- Action 1: Selected -->
+<div class="p-space-xs rounded bg-surface-container-highest flex flex-col justify-between shadow-[inset_0_0_10px_rgba(78,222,163,0.15)]">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-primary truncate">ANALYZE_HEAT</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+</div>
+<div class="mt-space-xs">
+<div class="w-full bg-surface-container rounded-full h-1 overflow-hidden">
+<div class="bg-primary h-1 rounded-full" style="width: 94.8%"></div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Weight</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">0.948</span>
+</div>
+</div>
+</div>
+<!-- Action 2 -->
+<div class="p-space-xs rounded bg-surface-container flex flex-col justify-between opacity-80 hover:opacity-100 transition">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface truncate">CHECK_VEG</span>
+<div class="mt-space-xs">
+<div class="w-full bg-surface-container-high rounded-full h-1 overflow-hidden">
+<div class="bg-outline h-1 rounded-full" style="width: 3.1%"></div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Weight</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.031</span>
+</div>
+</div>
+</div>
+<!-- Action 3 -->
+<div class="p-space-xs rounded bg-surface-container flex flex-col justify-between opacity-80 hover:opacity-100 transition">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface truncate">CHECK_EXPOSURE</span>
+<div class="mt-space-xs">
+<div class="w-full bg-surface-container-high rounded-full h-1 overflow-hidden">
+<div class="bg-outline h-1 rounded-full" style="width: 1.4%"></div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Weight</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.014</span>
+</div>
+</div>
+</div>
+<!-- Action 4 -->
+<div class="p-space-xs rounded bg-surface-container flex flex-col justify-between opacity-80 hover:opacity-100 transition">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface truncate">COMPARE_INT</span>
+<div class="mt-space-xs">
+<div class="w-full bg-surface-container-high rounded-full h-1 overflow-hidden">
+<div class="bg-outline h-1 rounded-full" style="width: 0.5%"></div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Weight</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.005</span>
+</div>
+</div>
+</div>
+<!-- Action 5 -->
+<div class="p-space-xs rounded bg-surface-container flex flex-col justify-between opacity-80 hover:opacity-100 transition">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface truncate">REQ_DATA</span>
+<div class="mt-space-xs">
+<div class="w-full bg-surface-container-high rounded-full h-1 overflow-hidden">
+<div class="bg-outline h-1 rounded-full" style="width: 0.2%"></div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Weight</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.002</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Visual States Switcher / Engine Operational Status Modes -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-xs pt-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Simulate Engine Pipeline Modes:</span>
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="cursor-pointer px-space-xs py-1 rounded bg-primary/20 text-primary font-label-mono-sm text-label-mono-sm flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[13px]">check</span> 1: Decision Accepted
+            </span>
+<span class="cursor-pointer px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">help_outline</span> 2: Clarification Req.
+            </span>
+<span class="cursor-pointer px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">block</span> 3: Invalid Rejected
+            </span>
+<span class="cursor-pointer px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">cloud_off</span> 4: Service Fallback
+            </span>
+</div>
+</div>
+</div>
+<!-- MODULE C: React Leaflet Environmental Map Workspace -->
+<div class="bg-surface-container-low/90 backdrop-blur-md rounded-xl p-space-md shadow-lg flex flex-col space-y-space-md">
+<!-- Leaflet Workspace Header & Layer Controls -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary">satellite_alt</span>
+<div class="flex flex-col">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Spatial Telemetry Heat Canvas</h2>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Lat: 37.7749° N | Lon: 122.4194° W | Projected EPSG:3857</span>
+</div>
+</div>
+<!-- Controls and Layer Toggles -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<button class="px-space-xs py-1 rounded bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">thermostat</span> Heat Index
+            </button>
+<button class="px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">nature</span> Canopy
+            </button>
+<button class="px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span> Demographics
+            </button>
+<button class="px-space-xs py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">sensors</span> Nodes (1,428)
+            </button>
+</div>
+</div>
+<!-- Simulated Leaflet Map Canvas with Geolocation Marker Overlays -->
+<div class="relative w-full h-80 rounded-xl bg-surface-container-lowest overflow-hidden shadow-inner flex flex-col justify-between p-space-md">
+<!-- Background Static Location Pipe: Map canvas anchor -->
+<div class="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity filter contrast-125" data-location="San Francisco Civic Center Urban Core" style=""></div>
+<!-- Synthetic Heatmap Contour SVG Layer -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialgradient cx="35%" cy="45%" id="hotspot-core" r="35%">
+<stop offset="0%" stop-color="#ffb4ab" stop-opacity="0.7"></stop>
+<stop offset="35%" stop-color="#ffb95f" stop-opacity="0.4"></stop>
+<stop offset="70%" stop-color="#4edea3" stop-opacity="0.1"></stop>
+<stop offset="100%" stop-color="#0e141b" stop-opacity="0"></stop>
+</radialgradient>
+<radialgradient cx="75%" cy="30%" id="hotspot-east" r="28%">
+<stop offset="0%" stop-color="#ffb95f" stop-opacity="0.6"></stop>
+<stop offset="50%" stop-color="#03b5d3" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#0e141b" stop-opacity="0"></stop>
+</radialgradient>
+</defs>
+<rect fill="url(#hotspot-core)" height="100%" width="100%"></rect>
+<rect fill="url(#hotspot-east)" height="100%" width="100%"></rect>
+<!-- Vector Grid Coordinates Overlay -->
+<path d="M 0 50 L 1000 50 M 0 120 L 1000 120 M 0 190 L 1000 190 M 0 260 L 1000 260" opacity="0.4" stroke="#3c4a42" stroke-dasharray="4 6" stroke-width="0.5"></path>
+<path d="M 120 0 L 120 400 M 260 0 L 260 400 M 420 0 L 420 400 M 580 0 L 580 400 M 740 0 L 740 400" opacity="0.4" stroke="#3c4a42" stroke-dasharray="4 6" stroke-width="0.5"></path>
+</svg>
+<!-- Floating Map Tools: Zoom Controls -->
+<div class="relative z-10 flex flex-col gap-1 w-8">
+<button class="w-8 h-8 rounded bg-surface-container-high/90 hover:bg-surface-bright text-on-surface flex items-center justify-center font-bold text-title-md shadow">+</button>
+<button class="w-8 h-8 rounded bg-surface-container-high/90 hover:bg-surface-bright text-on-surface flex items-center justify-center font-bold text-title-md shadow">-</button>
+</div>
+<!-- Hotspots Pins overlay -->
+<!-- Pin 1: Sector 7C (Flagged Critical) -->
+<div class="absolute left-[33%] top-[40%] z-20 flex flex-col items-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-error/90 text-on-error font-label-mono-sm text-label-mono-sm font-bold shadow-[0_0_12px_rgba(255,180,171,0.6)]">
+<span class="w-2 h-2 rounded-full bg-surface-lowest animate-ping"></span>
+              Sector 7C: 42.1°C
+            </div>
+<div class="w-0.5 h-4 bg-error"></div>
+<div class="w-3 h-3 rounded-full bg-error ring-4 ring-error/30 animate-pulse"></div>
+</div>
+<!-- Pin 2: North Riverside (Stable) -->
+<div class="absolute left-[20%] top-[20%] z-20 flex flex-col items-center -translate-x-1/2 -translate-y-1/2 cursor-pointer">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high/80 text-primary font-label-mono-sm text-label-mono-sm shadow">
+              North Riverside: 33.2°C
+            </div>
+<div class="w-0.5 h-3 bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+</div>
+<!-- Pin 3: East District Depot -->
+<div class="absolute left-[75%] top-[30%] z-20 flex flex-col items-center -translate-x-1/2 -translate-y-1/2 cursor-pointer">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high/80 text-tertiary font-label-mono-sm text-label-mono-sm shadow">
+              East District Depot: 39.8°C
+            </div>
+<div class="w-0.5 h-3 bg-tertiary"></div>
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+</div>
+<!-- Map Legend Bar (Bottom Left) -->
+<div class="relative z-10 self-start p-space-xs rounded-lg bg-surface-container-lowest/90 backdrop-blur-md flex flex-col space-y-1">
+<div class="flex justify-between text-[10px] font-label-mono-sm text-outline">
+<span>30°C (Nominal)</span>
+<span>38°C (Warning)</span>
+<span>46°C (Extreme)</span>
+</div>
+<div class="w-48 h-2 rounded-full bg-gradient-to-r from-primary via-tertiary to-error"></div>
+</div>
+</div>
+<!-- Map Location Details Slide-in / Selected Inspector Panel -->
+<div class="p-space-sm rounded-lg bg-surface-container-high/60 flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary">radar</span>
+<div>
+<div class="font-label-mono-sm text-label-mono-sm text-primary font-bold">Active Inspector: Sensor #409 (Sector 7C Downtown)</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+                Albedo: 0.11 • Canopy Density: 8.2% • Sunlight Exposure: 6.8 hrs continuous
+              </div>
+</div>
+</div>
+<div class="px-space-sm py-1 rounded bg-error-container/40 text-on-error-container font-label-mono-sm text-label-mono-sm self-start sm:self-auto">
+            Est. Vulnerable Pedestrians: 8,400 affected
+          </div>
+</div>
+</div>
+<!-- MODULE D: Dynamic Analytical Tool Results Inspection -->
+<div class="bg-surface-container-low/90 backdrop-blur-md rounded-xl p-space-md shadow-lg flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary">data_object</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Analytical Tool Execution Payloads</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">4 Active Returns • 1 Missing Stream</span>
+</div>
+<!-- 5 Tool Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-sm">
+<!-- Tool 1: heat_risk_analyzer.py -->
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col justify-between space-y-space-xs">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-primary">heat_risk_analyzer.py</span>
+<span class="material-symbols-outlined text-primary text-[14px]">check</span>
+</div>
+<div class="font-telemetry-value text-telemetry-value text-tertiary mt-1">44.2°C Max</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Wet Bulb Globe Temp (WBGT): <span class="text-error font-bold">33.1°C (Danger)</span>. Heat stress expected for 5.5 continuous hours.
+              </p>
+</div>
+<div class="pt-space-xs font-label-mono-sm text-label-mono-sm text-outline">Runtime: 42ms</div>
+</div>
+<!-- Tool 2: vegetation_canopy_eval.py -->
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col justify-between space-y-space-xs">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">vegetation_canopy_eval.py</span>
+<span class="material-symbols-outlined text-primary text-[14px]">check</span>
+</div>
+<div class="font-telemetry-value text-telemetry-value text-on-surface mt-1">0.14 NDVI</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Critically Deficient. 74% unshaded corridors along multi-modal transit corridors.
+              </p>
+</div>
+<div class="pt-space-xs font-label-mono-sm text-label-mono-sm text-outline">Runtime: 61ms</div>
+</div>
+<!-- Tool 3: human_vulnerability_index.py -->
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col justify-between space-y-space-xs">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-primary">human_vulnerability_idx.py</span>
+<span class="material-symbols-outlined text-primary text-[14px]">check</span>
+</div>
+<div class="font-telemetry-value text-telemetry-value text-tertiary mt-1">Score: 8.8/10</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                23% seniors &gt;65. 3 public health clinics in 800m. Average transit dwell: 18 min.
+              </p>
+</div>
+<div class="pt-space-xs font-label-mono-sm text-label-mono-sm text-outline">Runtime: 52ms</div>
+</div>
+<!-- Tool 4: intervention_matrix_comparison.py -->
+<div class="p-space-sm rounded-lg bg-surface-container md:col-span-2 lg:col-span-2 flex flex-col justify-between space-y-space-xs">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">intervention_matrix_comparison.py</span>
+<span class="material-symbols-outlined text-primary text-[14px]">bolt</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs mt-2">
+<div class="p-space-xs rounded bg-surface-container-high">
+<div class="font-label-mono-sm text-label-mono-sm text-outline">Option A: Cool Pavements</div>
+<div class="font-body-md text-body-md text-on-surface font-semibold">+18% Efficiency</div>
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">4-day mobilization window</div>
+</div>
+<div class="p-space-xs rounded bg-surface-container-high">
+<div class="font-label-mono-sm text-label-mono-sm text-primary">Option B: Rapid Shade Canopies</div>
+<div class="font-body-md text-body-md text-primary font-semibold">+35% Relief Impact</div>
+<div class="font-label-mono-sm text-label-mono-sm text-primary">Deployment: &lt; 2 hrs (Optimal)</div>
+</div>
+</div>
+</div>
+<div class="pt-space-xs font-label-mono-sm text-label-mono-sm text-outline">Simulation Confidence: 91.2%</div>
+</div>
+<!-- Tool 5: Missing Information / Data Gaps -->
+<div class="p-space-sm rounded-lg bg-surface-container-high/40 flex flex-col justify-between space-y-space-xs">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary">data_gap_monitor.py</span>
+<span class="material-symbols-outlined text-tertiary text-[14px]">warning</span>
+</div>
+<div class="font-title-md text-title-md text-on-surface mt-1">Micro-Wind Gap</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Station #412 offline. System applied regional mesoscale interpolation (1.4 m/s).
+              </p>
+</div>
+<div class="pt-space-xs font-label-mono-sm text-label-mono-sm text-outline">Reliability: High (94%)</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT MAIN COLUMN (4 of 12) -->
+<div class="lg:col-span-4 flex flex-col space-y-space-lg">
+<!-- MODULE E: Recommendation Panel (Amazon Bedrock Synthesis) -->
+<div class="bg-surface-container-low/95 backdrop-blur-md rounded-xl p-space-md shadow-xl flex flex-col space-y-space-md">
+<!-- Source Status Tag -->
+<div class="flex flex-col space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Reasoning Engine</span>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">AWS Bedrock Live</span>
+</div>
+</div>
+<div class="p-space-xs rounded bg-surface-container-high text-secondary font-label-mono-sm text-label-mono-sm flex items-center justify-between">
+<span class="truncate">Claude 3.5 Sonnet • us-east-1</span>
+<button class="text-outline hover:text-on-surface font-label-mono-sm text-[10px] uppercase underline ml-2">Dev Mock</button>
+</div>
+</div>
+<!-- Executive Summary -->
+<div class="flex flex-col space-y-1">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Executive Action Directive</span>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed p-space-sm rounded-lg bg-surface-container-lowest">
+            Immediate acute thermal emergency detected in <span class="text-tertiary font-semibold">Sector 7C</span>. Urban heat island intensity is exacerbated by low canopy albedo and afternoon solar irradiance.
+          </p>
+</div>
+<!-- Recommended Next Step -->
+<div class="p-space-sm rounded-lg bg-primary/10 shadow-sm flex flex-col space-y-space-xs">
+<div class="flex items-center gap-1 text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold">
+<span class="material-symbols-outlined text-[16px]">priority_high</span> Recommended Next Step
+          </div>
+<p class="font-body-md text-body-md text-on-surface font-medium">
+            Deploy Mobile Mist &amp; Cooling Tents along 4th &amp; Market transit stops; initiate municipal cool-roof emergency advisory for buildings &gt; 10,000 sq ft.
+          </p>
+</div>
+<!-- Supporting Evidence -->
+<div class="flex flex-col space-y-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm uppercase text-outline">Empirical Evidence Trace</span>
+<div class="space-y-1 text-on-surface-variant font-label-mono-sm text-label-mono-sm bg-surface-container-lowest p-space-sm rounded-lg">
+<div class="flex items-start gap-1">
+<span class="text-primary">•</span>
+<span>WBGT at 33.1°C exceeds OSHA &amp; Municipal Safe Activity threshold (31.1°C).</span>
+</div>
+<div class="flex items-start gap-1">
+<span class="text-primary">•</span>
+<span>Thermal imagery validates +8.4°C differential vs adjacent parkland.</span>
+</div>
+<div class="flex items-start gap-1">
+<span class="text-primary">•</span>
+<span>Transit queue sensor records 310 persons/hr in unshaded zones.</span>
+</div>
+</div>
+</div>
+<!-- Assumptions & Limitations -->
+<div class="grid grid-cols-1 gap-space-xs">
+<div class="p-space-xs rounded bg-surface-container text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="text-outline uppercase">Assumptions:</span> Continuous solar load until 17:30 UTC without cloud attenuation.
+          </div>
+<div class="p-space-xs rounded bg-surface-container text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="text-outline uppercase">Limitations:</span> Underground utility heat leakage not isolated in current spectrum.
+          </div>
+</div>
+<!-- Follow-up Action Buttons -->
+<div class="flex flex-col space-y-space-xs pt-space-xs">
+<button class="w-full py-space-sm px-space-md rounded-lg bg-primary text-on-primary font-label-mono-md text-label-mono-md uppercase tracking-wider flex items-center justify-center gap-2 shadow hover:shadow-primary/30 transition cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">send</span>
+            Issue Dispatch Advisory to Municipal Ops
+          </button>
+<button class="w-full py-space-sm px-space-md rounded-lg bg-surface-container-high text-on-surface hover:text-secondary font-label-mono-md text-label-mono-md uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+            Export GeoJSON &amp; Audit Log
+          </button>
+</div>
+</div>
+<!-- MODULE F: Decision Execution Trace (Interactive Vertical Pipeline) -->
+<div class="bg-surface-container-low/95 backdrop-blur-md rounded-xl p-space-md shadow-xl flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary">account_tree</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Decision Execution Trace</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-primary uppercase">6 of 6 Complete</span>
+</div>
+<!-- Timeline Pipeline Container -->
+<div class="relative pl-6 space-y-space-md before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-container-highest">
+<!-- Stage 1 -->
+<div class="relative flex flex-col space-y-0.5">
+<div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-low"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-on-surface">1. Report Received</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">COMPLETE</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">14:02:11.102 • Raw JSON payload validated</span>
+</div>
+<!-- Stage 2 -->
+<div class="relative flex flex-col space-y-0.5">
+<div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-low"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-on-surface">2. Environmental State Prepared</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">COMPLETE</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">14:02:11.240 • 12 sensor streams aggregated</span>
+</div>
+<!-- Stage 3 -->
+<div class="relative flex flex-col space-y-0.5">
+<div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-low"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-on-surface">3. Decider Evaluated Options</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">COMPLETE</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">14:02:11.358 • Decider 2B ranked 5 candidates</span>
+</div>
+<!-- Stage 4 -->
+<div class="relative flex flex-col space-y-0.5">
+<div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-low"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-on-surface">4. Decision Validated</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">COMPLETE</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">14:02:11.365 • Gate passed: 94.8% &gt; 85%</span>
+</div>
+<!-- Stage 5 -->
+<div class="relative flex flex-col space-y-0.5">
+<div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-low"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-on-surface">5. Analytical Tool Executed</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">COMPLETE</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">14:02:11.520 • heat_risk_analyzer: 155ms</span>
+</div>
+<!-- Stage 6 -->
+<div class="relative flex flex-col space-y-0.5">
+<div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-low"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm font-bold text-on-surface">6. Bedrock Recommendation</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">COMPLETE</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">14:02:11.984 • Bedrock API generated in 464ms</span>
+</div>
+</div>
+<!-- Alternate State Simulations Accordion -->
+<details class="group bg-surface-container-high/40 rounded-lg p-space-xs text-on-surface">
+<summary class="font-label-mono-sm text-label-mono-sm text-secondary cursor-pointer flex items-center justify-between">
+<span>Explore Failure/Fallback Simulation Paths</span>
+<span class="material-symbols-outlined text-[16px] group-open:rotate-180 transition">expand_more</span>
+</summary>
+<div class="mt-space-xs pt-space-xs space-y-1 font-label-mono-sm text-label-mono-sm text-on-surface-variant">
+<div class="p-space-xs rounded bg-surface-container flex items-center justify-between">
+<span>Simulation: Ambiguous Report (Needs Clarification)</span>
+<span class="text-tertiary">Gate Intercept</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container flex items-center justify-between">
+<span>Simulation: Tool Network Timeout (Fallback to Cache)</span>
+<span class="text-error">Graceful Failover</span>
+</div>
+</div>
+</details>
+</div>
+</div>
+</div>
+<!-- INLINE VANILLA JS FOR INTERACTION PRESETS AND FEEDBACK -->
+<script>
+    const presets = {
+      1: "URGENT: Ambient temp reaching 42.1°C with 65% humidity in Sector 7C (Downtown Core). High concentration of elderly residents and unshaded bus transit corridors. Canopy cover measured at 8.2%. Requesting immediate mitigation priority analysis.",
+      2: "ALERT: Eastside School District thermal index exceeding 39.4°C during recess discharge. 3 playgrounds with asphalt surfacing recording 48°C ground radiometry. Children cohort vulnerability elevated.",
+      3: "WARNING: Industrial Corridor Thermal Inversion. Stack heat trapped at surface layer. Temperature 40.8°C with static wind < 0.4 m/s. Hazardous ozone reaction potential detected.",
+      4: "ADVISORY: Low Vegetation District quadrant 4 displaying prolonged heat retention. Tree canopy deficit estimated at 88%. Residential night-cooling failure predicted."
+    };
+
+    function applyPreset(id) {
+      const textarea = document.getElementById('report-input');
+      if (textarea && presets[id]) {
+        textarea.value = presets[id];
+        
+        // Update active class on preset pills
+        const pills = document.querySelectorAll('.preset-pill');
+        pills.forEach((p, idx) => {
+          if (idx + 1 === id) {
+            p.classList.add('bg-primary', 'text-on-primary');
+            p.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+          } else {
+            p.classList.remove('bg-primary', 'text-on-primary');
+            p.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+          }
+        });
+      }
+    }
+
+    function triggerAgentRun() {
+      const btn = document.getElementById('run-agent-btn');
+      if (!btn) return;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span><span>Executing Decider 2B...</span>';
+      btn.classList.add('opacity-80', 'pointer-events-none');
+
+      setTimeout(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span><span>Action Verified (94.8%)</span>';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('opacity-80', 'pointer-events-none');
+        }, 2200);
+      }, 700);
+    }
+  </script>
+</div></main></div></body></html>
