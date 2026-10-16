@@ -32,17 +32,22 @@ export const App: React.FC = () => {
   const [isLoadingStatus, setIsLoadingStatus] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [apiLatency, setApiLatency] = useState<number | null>(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
 
-  // Load initial backend telemetry
+  // Load initial backend telemetry and measure round-trip latency
   const fetchSubsystemStatus = async () => {
     setIsLoadingStatus(true);
     setApiError(null);
+    const start = performance.now();
     try {
       const [healthData, configData, locationsData] = await Promise.all([
         api.getHealth(),
         api.getConfigStatus(),
         api.getLocations(),
       ]);
+      const measuredLatency = Math.round(performance.now() - start);
+      setApiLatency(measuredLatency);
       setHealth(healthData);
       setConfig(configData);
       setLocations(locationsData.locations || []);
@@ -77,7 +82,7 @@ export const App: React.FC = () => {
       setCurrentReport(result);
       setAnalyzedReports((prev) => [result, ...prev]);
 
-      // If user submitted from 'overview' or 'analyze', stay or view result
+      // If user submitted from 'map', switch to 'analyze'
       if (activeTab === 'map') {
         setActiveTab('analyze');
       }
@@ -98,48 +103,70 @@ export const App: React.FC = () => {
   const getPageMeta = () => {
     switch (activeTab) {
       case 'overview':
-        return { title: 'Environmental Intelligence Overview', subtitle: 'Real-time urban heat indicators and active decision session metrics' };
+        return {
+          title: 'Urban Climate & Heat Risk Operations',
+          subtitle: 'Real-time urban heat indicators and active decision session metrics',
+        };
       case 'map':
-        return { title: 'Spatial Microclimate Map', subtitle: 'Interactive heat-risk sensor locations and sample neighborhood zones' };
+        return {
+          title: 'Spatial Microclimate Map Canvas',
+          subtitle: 'Interactive heat-risk sensor locations and sample neighborhood zones',
+        };
       case 'analyze':
-        return { title: 'Decision Agent Workflow', subtitle: 'Submit urban environmental reports for Strands Decider 2B routing and Bedrock reasoning' };
+        return {
+          title: 'Decision Agent Workflow Deck',
+          subtitle: 'Submit urban environmental reports for Strands Decider 2B routing and Bedrock reasoning',
+        };
       case 'history':
-        return { title: 'Session Decision Audit History', subtitle: 'Chronological execution log of reports evaluated during this session' };
+        return {
+          title: 'Session Decision Audit History',
+          subtitle: 'Chronological execution log of reports evaluated during this session',
+        };
       case 'about':
-        return { title: 'Decider Pattern & Architecture', subtitle: 'Documentation on Strands Decider 2B and confidence-aware tool selection' };
+        return {
+          title: 'Decider Pattern & Architecture',
+          subtitle: 'Technical documentation on Strands Decider 2B and confidence-aware tool selection',
+        };
     }
   };
 
   const meta = getPageMeta();
 
   return (
-    <div className="flex min-h-screen bg-[#0a0d12] text-slate-100 font-sans">
-      {/* Left Navigation Sidebar */}
+    <div className="flex min-h-screen bg-surface text-on-surface font-body overflow-x-hidden">
+      {/* Responsive Sidebar (Fixed desktop, Drawer on tablet/mobile) */}
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         reportCount={analyzedReports.length}
+        isOpenMobile={isMobileNavOpen}
+        onCloseMobile={() => setIsMobileNavOpen(false)}
+        health={health}
+        config={config}
+        locationsCount={locations.length}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Area with responsive desktop offset (lg:pl-64 xl:pl-72, pl-0 on mobile/tablet) */}
+      <div className="lg:pl-64 xl:pl-72 flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         <Header
           title={meta.title}
           subtitle={meta.subtitle}
           health={health}
           config={config}
+          apiLatencyMs={apiLatency}
           isLoading={isLoadingStatus}
           onRefresh={fetchSubsystemStatus}
+          onOpenMobileNav={() => setIsMobileNavOpen(true)}
         />
 
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 space-y-6 overflow-y-auto max-w-7xl w-full mx-auto pb-16">
           {/* Global API Connection Error Banner */}
           {apiError && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start space-x-3 text-xs text-rose-300">
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-xl bg-error-container/20 border border-error/40 flex items-start gap-3 text-xs text-error font-body-sm shadow-sm">
+              <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <span className="font-bold text-rose-200">System Communication Notice</span>
-                <p className="leading-relaxed">{apiError}</p>
+                <span className="font-bold text-error">System Communication Notice</span>
+                <p className="leading-relaxed text-on-surface-variant">{apiError}</p>
               </div>
             </div>
           )}
@@ -152,17 +179,18 @@ export const App: React.FC = () => {
                 analyzedReports={analyzedReports}
               />
 
-              {/* Dual Column: Quick Map & Quick Report Form */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-7 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-300 font-semibold">
-                    <span className="flex items-center space-x-1.5">
-                      <Layers className="w-4 h-4 text-cyan-400" />
-                      <span>Monitored Thermal Zones</span>
+              {/* Dual Column: Quick Map & Quick Report Form (Stacks on < xl for maximum readability) */}
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                <div className="xl:col-span-7 space-y-3 min-w-0">
+                  <div className="flex items-center justify-between text-xs font-label-mono-sm text-outline">
+                    <span className="flex items-center gap-1.5 text-secondary">
+                      <Layers className="w-4 h-4 text-secondary" />
+                      <span>Monitored Thermal Canvas</span>
                     </span>
                     <button
+                      type="button"
                       onClick={() => setActiveTab('map')}
-                      className="text-cyan-400 hover:text-cyan-300 font-medium"
+                      className="text-secondary hover:underline cursor-pointer"
                     >
                       Open Full Map &rarr;
                     </button>
@@ -175,7 +203,7 @@ export const App: React.FC = () => {
                   />
                 </div>
 
-                <div className="lg:col-span-5 space-y-3">
+                <div className="xl:col-span-5 space-y-3 min-w-0">
                   <ReportForm
                     locations={locations}
                     onSubmit={handleSubmitReport}
@@ -187,20 +215,37 @@ export const App: React.FC = () => {
 
               {/* Show Latest Decision Results if available */}
               {currentReport && (
-                <div className="space-y-6 pt-4 border-t border-[#242d3d]">
-                  <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
-                    <FileCheck className="w-5 h-5 text-emerald-400" />
-                    <span>Latest Analysis: {currentReport.report_id}</span>
-                  </h3>
+                <div className="space-y-6 pt-4 border-t border-outline-variant/30">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h3 className="font-headline-sm text-on-surface font-bold flex items-center gap-2 text-base sm:text-lg">
+                      <FileCheck className="w-5 h-5 text-primary shrink-0" />
+                      <span>Latest Decision Pipeline Result: {currentReport.report_id}</span>
+                    </h3>
+                    <span className="font-label-mono-sm px-2.5 py-1 rounded bg-surface-container-high border border-outline-variant/30 text-secondary self-start sm:self-auto text-xs">
+                      Terminal Stage: {currentReport.workflow_stage}
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <DeciderPanel decision={currentReport.decision} />
-                    {currentReport.tool_execution && (
+                    {currentReport.tool_execution ? (
                       <ToolExecutionPanel toolExecution={currentReport.tool_execution} />
+                    ) : (
+                      <div className="bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-center items-center text-center space-y-2 text-xs">
+                        <span className="text-tertiary font-bold font-label-mono-sm uppercase">
+                          Tool Execution Held at Safety Gate
+                        </span>
+                        <p className="text-on-surface-variant max-w-sm font-body-sm">
+                          Because model confidence was below the configured threshold, no tool was executed automatically.
+                        </p>
+                      </div>
                     )}
                   </div>
+
                   {currentReport.recommendation && (
                     <RecommendationPanel recommendation={currentReport.recommendation} />
                   )}
+
                   <ExecutionTrace
                     steps={currentReport.execution_trace}
                     totalLatencyMs={currentReport.total_latency_ms}
@@ -220,33 +265,6 @@ export const App: React.FC = () => {
                 onSelectLocation={setSelectedLocation}
                 onPreloadReport={handlePreloadLocation}
               />
-
-              {/* Location details card when a location is selected */}
-              {selectedLocation && (
-                <div className="p-4 rounded-xl bg-[#161c28] border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-                  <div>
-                    <h4 className="font-bold text-slate-100 text-sm">{selectedLocation.name}</h4>
-                    <p className="text-slate-400 mt-0.5">{selectedLocation.description}</p>
-                    <div className="flex items-center space-x-3 mt-2 font-mono text-[11px]">
-                      <span className="text-rose-400">
-                        Heat Index: {selectedLocation.synthetic_measurements.heat_index_c}°C
-                      </span>
-                      <span className="text-emerald-400">
-                        Canopy: {selectedLocation.synthetic_measurements.canopy_coverage_pct}%
-                      </span>
-                      <span className="text-cyan-400">
-                        Transit Stops: {selectedLocation.synthetic_measurements.transit_stops_count}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handlePreloadLocation(selectedLocation)}
-                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold transition-colors shrink-0"
-                  >
-                    Load into Report Form &rarr;
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -267,9 +285,11 @@ export const App: React.FC = () => {
                     {currentReport.tool_execution ? (
                       <ToolExecutionPanel toolExecution={currentReport.tool_execution} />
                     ) : (
-                      <div className="bg-[#161c28] border border-[#242d3d] rounded-xl p-6 flex flex-col justify-center items-center text-center space-y-2 text-xs">
-                        <span className="text-amber-400 font-semibold">Tool Execution Held at Safety Gate</span>
-                        <p className="text-slate-400 max-w-sm">
+                      <div className="bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-center items-center text-center space-y-2 text-xs">
+                        <span className="text-tertiary font-bold font-label-mono-sm uppercase">
+                          Tool Execution Held at Safety Gate
+                        </span>
+                        <p className="text-on-surface-variant max-w-sm font-body-sm">
                           Because model confidence was below the configured threshold, no tool was executed automatically.
                         </p>
                       </div>

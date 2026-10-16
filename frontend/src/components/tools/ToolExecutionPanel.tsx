@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Wrench,
   Clock,
   Database,
   CheckCircle2,
@@ -17,44 +16,37 @@ export const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({ toolExec
   const out = toolExecution.output || {};
 
   return (
-    <div className="bg-[#161c28] border border-[#242d3d] rounded-xl p-5 shadow-sm space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#242d3d]/60 pb-3">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-            <Wrench className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
-              <span>Tool Execution: {toolExecution.tool_name}</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Deterministic Python analytical module dispatched by Decider 2B.
-            </p>
-          </div>
+    <div className="bg-surface-container-low/90 backdrop-blur-md rounded-xl p-5 border border-outline-variant/30 shadow-lg flex flex-col space-y-4">
+      {/* Header (Stitch styling) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-outline-variant/20">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[22px]">data_object</span>
+          <h2 className="font-headline-sm text-on-surface font-bold">
+            Analytical Tool Execution Payloads
+          </h2>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#111620] border border-[#242d3d] text-xs text-slate-400 font-mono">
-            <Clock className="w-3.5 h-3.5 text-purple-400" />
-            <span>{toolExecution.execution_time_ms.toLocaleString()} ms</span>
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-xs font-mono text-outline">
+            <Clock className="w-3 h-3 text-secondary" />
+            <span>Runtime: {toolExecution.execution_time_ms.toLocaleString()} ms</span>
           </div>
 
           <div
-            className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-label-mono-sm font-bold ${
               isSuccess
-                ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300'
-                : 'bg-rose-500/15 border border-rose-500/30 text-rose-300'
+                ? 'bg-primary/10 text-primary border border-primary/30'
+                : 'bg-error-container/20 text-error border border-error/30'
             }`}
           >
             {isSuccess ? (
               <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                 <span>SUCCESS</span>
               </>
             ) : (
               <>
-                <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                <AlertCircle className="w-3.5 h-3.5 text-error" />
                 <span>FAILED</span>
               </>
             )}
@@ -62,87 +54,96 @@ export const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({ toolExec
         </div>
       </div>
 
-      {/* Synthetic Data Disclaimer Banner */}
-      <div className="p-3 rounded-lg bg-[#111620] border border-amber-500/30 flex items-center justify-between text-xs text-slate-300">
-        <div className="flex items-center space-x-2">
-          <Database className="w-4 h-4 text-amber-400 shrink-0" />
+      {/* Data Provenance & Synthetic Disclaimer */}
+      <div className="p-3 rounded-lg bg-surface-container border border-outline-variant/30 flex items-center justify-between text-xs text-on-surface-variant font-label-mono-sm">
+        <div className="flex items-center gap-2">
+          <Database className="w-4 h-4 text-tertiary shrink-0" />
           <span>
-            <strong className="text-amber-300 font-semibold">Data Provenance:</strong>{' '}
-            {out.data_label || 'SYNTHETIC_DEV_DATASET_V1'} &bull; {out.disclaimer || 'Sample measurements'}
+            <strong className="text-tertiary">Data Provenance:</strong>{' '}
+            {out.data_label || 'SYNTHETIC_DEV_DATASET_V1'} &bull;{' '}
+            {out.disclaimer || 'Sample measurements'}
           </span>
         </div>
+        <span className="font-mono text-outline text-[11px] hidden md:inline">
+          Action: {toolExecution.tool_name}
+        </span>
       </div>
 
-      {/* Tool-Specific Structured Metrics */}
+      {/* Tool 1: ANALYZE_HEAT */}
       {toolExecution.tool_name === 'ANALYZE_HEAT' && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Ambient Air Temp</span>
-              <p className="font-mono text-xl font-bold text-rose-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Ambient Air Temp</span>
+              <p className="font-telemetry-value text-error mt-1">
                 {out.observed_ambient_temp_c}°C
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Radiant Surface Temp</span>
-              <p className="font-mono text-xl font-bold text-amber-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Radiant Surface Temp</span>
+              <p className="font-telemetry-value text-tertiary mt-1">
                 {out.observed_surface_temp_c}°C
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Heat Index</span>
-              <p className="font-mono text-xl font-bold text-purple-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Heat Index</span>
+              <p className="font-telemetry-value text-error mt-1">
                 {out.heat_index_c}°C
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Thermal Severity</span>
-              <p className="font-mono text-sm font-bold text-rose-300 mt-2">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Thermal Severity</span>
+              <p className="font-mono text-sm font-bold text-error mt-2">
                 {out.heat_severity_level}
               </p>
             </div>
           </div>
 
-          <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d] space-y-1 text-xs">
-            <span className="font-semibold text-slate-300">Nocturnal Retention Risk:</span>
-            <p className="text-slate-400">{out.nocturnal_retention_risk}</p>
+          <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 space-y-1 font-body-sm text-on-surface-variant">
+            <span className="font-bold text-on-surface font-label-mono-sm text-secondary">
+              Nocturnal Retention Risk:
+            </span>
+            <p className="mt-0.5 leading-relaxed">{out.nocturnal_retention_risk}</p>
           </div>
         </div>
       )}
 
+      {/* Tool 2: CHECK_VEGETATION */}
       {toolExecution.tool_name === 'CHECK_VEGETATION' && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Canopy Coverage</span>
-              <p className="font-mono text-xl font-bold text-emerald-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Canopy Coverage</span>
+              <p className="font-telemetry-value text-primary mt-1">
                 {out.canopy_coverage_pct}%
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Canopy Deficit (Goal 30%)</span>
-              <p className="font-mono text-xl font-bold text-amber-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Canopy Deficit (Goal 30%)</span>
+              <p className="font-telemetry-value text-tertiary mt-1">
                 {out.canopy_deficit_pct}%
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">NDVI Index</span>
-              <p className="font-mono text-xl font-bold text-cyan-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">NDVI Index</span>
+              <p className="font-telemetry-value text-secondary mt-1">
                 {out.ndvi_index}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Cooling Potential</span>
-              <p className="font-mono text-xl font-bold text-emerald-300 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Cooling Potential</span>
+              <p className="font-telemetry-value text-primary mt-1">
                 +{out.estimated_cooling_potential_c}°C
               </p>
             </div>
           </div>
 
           {out.recommended_planting_priorities?.length > 0 && (
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d] space-y-2 text-xs">
-              <span className="font-semibold text-slate-300">Recommended Planting Priorities:</span>
-              <ul className="list-disc list-inside text-slate-400 space-y-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 space-y-2 text-xs">
+              <span className="font-label-mono-sm text-secondary uppercase font-bold">
+                Recommended Planting Priorities:
+              </span>
+              <ul className="list-disc list-inside text-on-surface-variant space-y-1 font-body-sm">
                 {out.recommended_planting_priorities.map((item: string, i: number) => (
                   <li key={i}>{item}</li>
                 ))}
@@ -152,43 +153,46 @@ export const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({ toolExec
         </div>
       )}
 
+      {/* Tool 3: CHECK_EXPOSURE */}
       {toolExecution.tool_name === 'CHECK_EXPOSURE' && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Exposure Level</span>
-              <p className="font-mono text-sm font-bold text-rose-300 mt-2">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Exposure Level</span>
+              <p className="font-mono text-sm font-bold text-error mt-2">
                 {out.overall_exposure_level}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Transit Stops</span>
-              <p className="font-mono text-xl font-bold text-cyan-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Transit Stops</span>
+              <p className="font-telemetry-value text-secondary mt-1">
                 {out.transit_stops_count}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Daily Commuters</span>
-              <p className="font-mono text-xl font-bold text-purple-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Daily Commuters</span>
+              <p className="font-telemetry-value text-primary mt-1">
                 {out.daily_transit_commuters?.toLocaleString()}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d]">
-              <span className="text-[11px] text-slate-400">Unshaded Waiting Zones</span>
-              <p className="font-mono text-xl font-bold text-amber-400 mt-1">
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30">
+              <span className="font-label-mono-sm text-outline">Unshaded Waiting Zones</span>
+              <p className="font-telemetry-value text-tertiary mt-1">
                 {out.unshaded_waiting_areas}
               </p>
             </div>
           </div>
 
           {out.vulnerable_facilities?.length > 0 && (
-            <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d] space-y-2 text-xs">
-              <span className="font-semibold text-slate-300">Nearby Vulnerable Facilities:</span>
+            <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 space-y-2 text-xs">
+              <span className="font-label-mono-sm text-secondary uppercase font-bold">
+                Nearby Vulnerable Facilities:
+              </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {out.vulnerable_facilities.map((fac: any, i: number) => (
-                  <div key={i} className="p-2 rounded bg-[#0d121c] border border-[#242d3d] flex justify-between">
-                    <span className="font-medium text-slate-200">{fac.name}</span>
-                    <span className="text-slate-400 font-mono text-[11px]">{fac.distance_m}m away</span>
+                  <div key={i} className="p-2 rounded bg-surface-container-lowest border border-outline-variant/20 flex justify-between">
+                    <span className="font-medium text-on-surface">{fac.name}</span>
+                    <span className="text-outline font-mono text-[11px]">{fac.distance_m}m away</span>
                   </div>
                 ))}
               </div>
@@ -197,22 +201,23 @@ export const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({ toolExec
         </div>
       )}
 
+      {/* Tool 4: COMPARE_INTERVENTIONS */}
       {toolExecution.tool_name === 'COMPARE_INTERVENTIONS' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {out.interventions?.map((opt: any) => (
               <div
                 key={opt.intervention_id}
-                className="p-3.5 rounded-lg bg-[#111620] border border-[#242d3d] space-y-2 text-xs"
+                className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 space-y-2 text-xs"
               >
                 <div className="flex items-start justify-between">
-                  <h4 className="font-bold text-slate-200 text-sm">{opt.name}</h4>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-mono text-xs font-semibold">
+                  <h4 className="font-bold text-on-surface text-sm font-headline-sm">{opt.name}</h4>
+                  <span className="px-2 py-0.5 rounded bg-primary/15 text-primary font-mono text-xs font-semibold">
                     -{opt.estimated_cooling_delta_c}°C
                   </span>
                 </div>
-                <p className="text-slate-400 text-[11px]">{opt.cooling_mechanism}</p>
-                <div className="pt-2 border-t border-[#242d3d] flex justify-between text-[11px] text-slate-400">
+                <p className="text-on-surface-variant text-[11px] leading-relaxed">{opt.cooling_mechanism}</p>
+                <div className="pt-2 border-t border-outline-variant/20 flex justify-between text-[11px] text-outline font-label-mono-sm">
                   <span>Cost: {opt.estimated_cost_tier}</span>
                   <span>Timeline: {opt.implementation_timeline}</span>
                 </div>
@@ -222,18 +227,21 @@ export const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({ toolExec
         </div>
       )}
 
+      {/* Tool 5: REQUEST_MORE_DATA */}
       {toolExecution.tool_name === 'REQUEST_MORE_DATA' && (
         <div className="space-y-3 text-xs">
-          <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d] space-y-2">
-            <span className="font-semibold text-amber-300">Identified Information Gaps:</span>
-            <div className="space-y-1.5">
+          <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 space-y-2">
+            <span className="font-label-mono-sm text-tertiary uppercase font-bold">
+              Identified Information Gaps:
+            </span>
+            <div className="space-y-2">
               {out.missing_parameters?.map((p: any, i: number) => (
-                <div key={i} className="p-2 rounded bg-[#0d121c] border border-[#242d3d] flex justify-between">
+                <div key={i} className="p-2.5 rounded bg-surface-container-lowest border border-outline-variant/20 flex justify-between items-center">
                   <div>
-                    <span className="font-mono text-slate-200 font-semibold">{p.parameter_name}</span>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{p.description}</p>
+                    <span className="font-mono text-on-surface font-semibold text-xs">{p.parameter_name}</span>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5">{p.description}</p>
                   </div>
-                  <span className="text-amber-400 font-mono text-[10px] shrink-0">{p.importance}</span>
+                  <span className="text-tertiary font-mono text-[10px] uppercase font-bold shrink-0">{p.importance}</span>
                 </div>
               ))}
             </div>
@@ -241,10 +249,11 @@ export const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({ toolExec
         </div>
       )}
 
-      {/* Summary Text */}
+      {/* Summary Narrative */}
       {out.analysis_summary && (
-        <div className="p-3 rounded-lg bg-[#111620] border border-[#242d3d] text-xs text-slate-300 leading-relaxed">
-          <strong className="text-slate-200">Analytical Summary:</strong> {out.analysis_summary}
+        <div className="p-3.5 rounded-lg bg-surface-container-lowest border border-outline-variant/30 text-xs text-on-surface leading-relaxed font-body-sm">
+          <strong className="text-primary font-label-mono-sm uppercase">Analytical Summary:</strong>{' '}
+          {out.analysis_summary}
         </div>
       )}
     </div>

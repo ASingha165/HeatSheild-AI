@@ -1,11 +1,7 @@
-import React from 'react';
 import {
-  Cpu,
-  Clock,
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  BarChart2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -22,185 +18,208 @@ interface DeciderPanelProps {
   decision: NormalizedDecision;
 }
 
+const ACTION_OPTIONS = [
+  'ANALYZE_HEAT',
+  'CHECK_VEGETATION',
+  'CHECK_EXPOSURE',
+  'COMPARE_INTERVENTIONS',
+  'REQUEST_MORE_DATA',
+];
+
 export const DeciderPanel: React.FC<DeciderPanelProps> = ({ decision }) => {
   const isAccepted = decision.status === 'accepted';
   const isClarification = decision.status === 'requires_clarification';
   const isInvalid = decision.status === 'rejected_invalid';
 
   // Format probabilities for Recharts bar chart
-  const probData = Object.entries(decision.probabilities || {}).map(([action, val]) => ({
-    action,
-    probability: Math.round(val * 1000) / 10, // e.g. 88.5%
-    rawVal: val,
-    isSelected: action === decision.decision,
-  })).sort((a, b) => b.probability - a.probability);
+  const probData = ACTION_OPTIONS.map((action) => {
+    const val = decision.probabilities?.[action] ?? 0;
+    return {
+      action,
+      probability: Math.round(val * 1000) / 10, // e.g. 87.0%
+      rawVal: val,
+      isSelected: action === decision.decision,
+    };
+  }).sort((a, b) => b.probability - a.probability);
+
+  const confidencePct = Math.round((decision.confidence ?? 0) * 100);
 
   return (
-    <div className="bg-[#161c28] border border-[#242d3d] rounded-xl p-5 shadow-sm space-y-4">
+    <div className="bg-surface-container-low/95 backdrop-blur-md rounded-xl p-5 border border-outline-variant/30 shadow-xl flex flex-col space-y-4 relative overflow-hidden">
+      {/* Subtle tactical corner indicator */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none"></div>
+
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#242d3d]/60 pb-3">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-            <Cpu className="w-5 h-5" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-outline-variant/20">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-secondary text-[22px]">psychology_alt</span>
+          <h2 className="font-headline-sm text-on-surface font-bold">
+            Strands Decider 2B Decision Engine
+          </h2>
+        </div>
+        <span className="font-label-mono-sm text-outline uppercase tracking-wider">
+          Action Classification & Gating
+        </span>
+      </div>
+
+      {/* Highlight Action Banner (Stitch Anchor) */}
+      <div className="p-4 rounded-xl bg-surface-container-high/90 border border-outline-variant/30 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(78,222,163,0.3)] shrink-0">
+            <span className="material-symbols-outlined text-[28px]">flare</span>
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
-              <span>Strands Decider 2B Routing</span>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                Pointer Readout Head
+            <div className="flex items-center gap-2">
+              <span className="font-label-mono-sm uppercase text-outline">Selected Action:</span>
+              <span className="font-label-mono-md font-bold text-primary tracking-wide text-base">
+                {decision.decision}
               </span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Typed single forward-pass classification across 5 predefined analytical actions.
+              <span className="h-2 w-2 rounded-full bg-primary animate-ping"></span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span className="px-2 py-0.5 rounded bg-primary text-on-primary font-label-mono-sm font-bold">
+                {confidencePct}% Confidence
+              </span>
+              <span className="font-label-mono-sm text-on-surface-variant">
+                Latency: {decision.latency_ms?.toLocaleString() ?? 0} ms (Decider 2B)
+              </span>
+              <span className="font-label-mono-sm text-primary">
+                Execution-gate: {isAccepted ? 'PASSED (≥60%)' : isClarification ? 'REQUIRES_CLARIFICATION' : 'REJECTED'}
+              </span>
+            </div>
+            <p className="font-label-mono-sm text-outline mt-1 italic text-[11px]">
+              * Confidence reflects statistical causal softmax margin across allowed action space.
             </p>
           </div>
         </div>
 
-        {/* Status Badge */}
-        <div>
+        <div className="flex items-center gap-2 self-start md:self-center shrink-0">
           {isAccepted && (
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>ACCEPTED &bull; PROCEED_TO_TOOL</span>
-            </div>
+            <span className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/30 font-label-mono-sm flex items-center gap-1.5 font-bold shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              <span>Gated to Tools</span>
+            </span>
           )}
           {isClarification && (
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-              <span>GATED &bull; REQUIRES_CLARIFICATION</span>
-            </div>
+            <span className="px-3 py-1.5 rounded-lg bg-tertiary/15 text-tertiary border border-tertiary/30 font-label-mono-sm flex items-center gap-1.5 font-bold shadow-sm">
+              <AlertTriangle className="w-4 h-4 text-tertiary" />
+              <span>Safety Gate Held</span>
+            </span>
           )}
           {isInvalid && (
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold">
-              <XCircle className="w-3.5 h-3.5 text-rose-400" />
-              <span>REJECTED_INVALID</span>
-            </div>
+            <span className="px-3 py-1.5 rounded-lg bg-error-container/20 text-error border border-error/30 font-label-mono-sm flex items-center gap-1.5 font-bold shadow-sm">
+              <XCircle className="w-4 h-4 text-error" />
+              <span>Rejected Invalid</span>
+            </span>
           )}
         </div>
       </div>
 
-      {/* Main Choice & Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Selected Action Card */}
-        <div className="p-4 rounded-lg bg-[#111620] border border-[#242d3d] flex flex-col justify-between">
-          <span className="text-xs text-slate-400 font-medium">Selected Analytical Tool</span>
-          <div className="mt-1">
-            <span className="font-mono text-base font-bold text-cyan-300">
-              {decision.decision}
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-2">
-            Predefined action option
-          </span>
-        </div>
+      {/* Candidate Action Space Distribution Matrix (Stitch 5-Box Grid) */}
+      <div className="flex flex-col space-y-2">
+        <span className="font-label-mono-sm uppercase text-outline">
+          Candidate Action Space Distribution
+        </span>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {ACTION_OPTIONS.map((action) => {
+            const isSelected = action === decision.decision;
+            const prob = decision.probabilities?.[action] ?? 0;
+            const pct = Math.round(prob * 1000) / 10;
 
-        {/* Calibrated Model Confidence */}
-        <div className="p-4 rounded-lg bg-[#111620] border border-[#242d3d] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-medium">Calibrated Confidence</span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              Gate: &ge;{Math.round(decision.confidence_threshold * 100)}%
-            </span>
-          </div>
-          <div className="mt-1 flex items-baseline space-x-2">
-            <span className={`font-mono text-xl font-bold ${
-              decision.is_above_threshold ? 'text-emerald-400' : 'text-amber-400'
-            }`}>
-              {(decision.confidence * 100).toFixed(1)}%
-            </span>
-            <span className="text-xs text-slate-400 font-mono">({decision.confidence.toFixed(4)})</span>
-          </div>
-          <div className="w-full bg-[#1e2636] h-1.5 rounded-full overflow-hidden mt-2">
-            <div
-              className={`h-full rounded-full transition-all ${
-                decision.is_above_threshold ? 'bg-emerald-400' : 'bg-amber-400'
-              }`}
-              style={{ width: `${Math.min(100, Math.max(0, decision.confidence * 100))}%` }}
-            />
-          </div>
-        </div>
+            return (
+              <div
+                key={action}
+                className={`p-2.5 rounded-lg border transition-all flex flex-col justify-between ${
+                  isSelected
+                    ? 'bg-surface-container-highest border-primary/50 shadow-[inset_0_0_10px_rgba(78,222,163,0.15)]'
+                    : 'bg-surface-container border-outline-variant/30 opacity-75 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`font-label-mono-sm truncate ${
+                      isSelected ? 'font-bold text-primary' : 'text-on-surface'
+                    }`}
+                  >
+                    {action}
+                  </span>
+                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                </div>
 
-        {/* Measured Decision Latency */}
-        <div className="p-4 rounded-lg bg-[#111620] border border-[#242d3d] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-medium">Model Latency</span>
-            <Clock className="w-3.5 h-3.5 text-purple-400" />
-          </div>
-          <div className="mt-1">
-            <span className="font-mono text-xl font-bold text-purple-300">
-              {decision.latency_ms.toLocaleString()} ms
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-2">
-            Single causal forward-pass
-          </span>
+                <div className="mt-2">
+                  <div className="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-1.5 rounded-full ${isSelected ? 'bg-primary' : 'bg-outline'}`}
+                      style={{ width: `${Math.max(pct, 2)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center mt-1 text-[10px] font-label-mono-sm">
+                    <span className="text-outline">Prob</span>
+                    <span className={isSelected ? 'text-primary font-bold' : 'text-on-surface-variant'}>
+                      {pct}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Low-Confidence Safety Notice */}
-      {isClarification && decision.clarification_prompt && (
-        <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start space-x-3 text-xs text-amber-200">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-semibold text-amber-300">
-              Safety Gate Tripped: Autonomous Tool Execution Paused
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              {decision.clarification_prompt}
-            </p>
-          </div>
+      {/* Recharts Detailed Distribution Chart */}
+      <div className="space-y-2 pt-2 border-t border-outline-variant/20">
+        <div className="flex items-center justify-between">
+          <span className="font-label-mono-sm text-outline uppercase">
+            Probability Distribution Spectrum
+          </span>
+          <span className="font-label-mono-sm text-on-surface-variant text-[11px]">
+            Pointer Readout Softmax
+          </span>
         </div>
-      )}
-
-      {/* Probabilities Distribution Chart */}
-      {probData.length > 0 && (
-        <div className="p-4 rounded-lg bg-[#111620] border border-[#242d3d] space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
-              <BarChart2 className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Full Probability Distribution Across Allowed Actions</span>
-            </span>
-            <span className="text-[11px] text-slate-400 font-mono">Softmax Logits</span>
-          </div>
-
-          <div className="h-44 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={probData}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-              >
-                <XAxis type="number" domain={[0, 100]} unit="%" tick={{ fill: '#64748b', fontSize: 11 }} />
-                <YAxis
-                  type="category"
-                  dataKey="action"
-                  tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }}
-                  width={130}
-                />
-                <Tooltip
-                  formatter={(val: any) => [`${val}%`, 'Probability']}
-                  contentStyle={{
-                    backgroundColor: '#161c28',
-                    borderColor: '#334055',
-                    borderRadius: '0.5rem',
-                    color: '#f1f5f9',
-                    fontSize: '12px',
-                  }}
-                />
-                <Bar dataKey="probability" radius={[0, 4, 4, 0]}>
-                  {probData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.isSelected ? '#06b6d4' : '#242d3d'}
-                      stroke={entry.isSelected ? '#38bdf8' : '#334055'}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="h-44 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={probData}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                unit="%"
+                stroke="#86948a"
+                tick={{ fill: '#86948a', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+              />
+              <YAxis
+                type="category"
+                dataKey="action"
+                width={140}
+                stroke="#86948a"
+                tick={{ fill: '#dde3ed', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#161c23',
+                  borderColor: '#3c4a42',
+                  borderRadius: '0.375rem',
+                  color: '#dde3ed',
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: '11px',
+                }}
+                formatter={(value: any) => [`${value}%`, 'Softmax Probability']}
+              />
+              <Bar dataKey="probability" radius={[0, 4, 4, 0]}>
+                {probData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.isSelected ? '#4edea3' : '#343a41'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      )}
+      </div>
     </div>
   );
 };

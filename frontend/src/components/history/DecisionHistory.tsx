@@ -15,12 +15,14 @@ export const DecisionHistory: React.FC<DecisionHistoryProps> = ({
 }) => {
   if (reports.length === 0) {
     return (
-      <div className="bg-[#161c28] border border-[#242d3d] rounded-xl p-8 text-center space-y-3">
-        <div className="w-12 h-12 rounded-full bg-[#111620] border border-[#242d3d] flex items-center justify-center text-slate-500 mx-auto">
+      <div className="bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/30 rounded-xl p-8 text-center space-y-3">
+        <div className="w-12 h-12 rounded-full bg-surface-container border border-outline-variant/30 flex items-center justify-center text-outline mx-auto">
           <History className="w-6 h-6" />
         </div>
-        <h4 className="text-sm font-semibold text-slate-300">No Decision History in Current Session</h4>
-        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+        <h4 className="font-headline-sm text-sm font-semibold text-on-surface">
+          No Decision History in Current Session
+        </h4>
+        <p className="font-body-sm text-on-surface-variant max-w-sm mx-auto">
           Submit an environmental report from the Analyze tab or choose a monitored zone on the map to run the decision agent.
         </p>
       </div>
@@ -28,16 +30,16 @@ export const DecisionHistory: React.FC<DecisionHistoryProps> = ({
   }
 
   return (
-    <div className="bg-[#161c28] border border-[#242d3d] rounded-xl p-5 shadow-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-[#242d3d]/60 pb-3">
+    <div className="bg-surface-container-low/90 backdrop-blur-md border border-outline-variant/30 rounded-xl p-5 shadow-lg space-y-4">
+      <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
         <div>
-          <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
-            <span>Session Decision History</span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          <h3 className="font-headline-sm text-on-surface font-bold flex items-center gap-2">
+            <span>Session Decision Audit History</span>
+            <span className="font-label-mono-sm px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">
               {reports.length} {reports.length === 1 ? 'Record' : 'Records'}
             </span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="font-label-mono-sm text-outline mt-0.5">
             Audit history of environmental analyses executed during this session.
           </p>
         </div>
@@ -55,48 +57,50 @@ export const DecisionHistory: React.FC<DecisionHistoryProps> = ({
               onClick={() => onSelectReport(rep)}
               className={`p-3.5 rounded-lg border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                 isSelected
-                  ? 'bg-cyan-500/10 border-cyan-500/40 shadow-sm'
-                  : 'bg-[#111620] border-[#242d3d] hover:border-[#334055] hover:bg-[#1a2130]'
+                  ? 'bg-surface-container-highest border-primary/50 shadow-sm'
+                  : 'bg-surface-container border-outline-variant/30 hover:border-outline-variant hover:bg-surface-container-high'
               }`}
             >
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="font-mono text-xs font-bold text-slate-200">{rep.report_id}</span>
-                  <span className="text-slate-500 text-xs">&bull;</span>
-                  <span className="text-xs font-medium text-slate-300">{rep.location}</span>
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-on-surface">{rep.report_id}</span>
+                  <span className="text-outline text-xs">&bull;</span>
+                  <span className="font-body-sm font-medium text-on-surface-variant">{rep.location}</span>
                   <span
-                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                    className={`font-label-mono-sm px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${
                       isAccepted
-                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-primary/15 text-primary border border-primary/30'
                         : isGated
-                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                        : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                        ? 'bg-tertiary/15 text-tertiary border border-tertiary/30'
+                        : 'bg-error-container/20 text-error border border-error/30'
                     }`}
                   >
                     {rep.workflow_stage}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 line-clamp-1 max-w-xl">{rep.original_report}</p>
+                <p className="font-body-sm text-outline line-clamp-1 max-w-xl truncate">
+                  {rep.original_report}
+                </p>
               </div>
 
-              <div className="flex items-center space-x-4 shrink-0 text-xs">
+              <div className="flex items-center gap-4 shrink-0 text-xs">
                 <div className="text-right">
-                  <span className="font-mono text-cyan-300 font-semibold block">
+                  <span className="font-mono text-primary font-bold block">
                     {rep.decision?.decision || 'NONE'}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-mono">
+                  <span className="font-label-mono-sm text-outline">
                     Conf: {((rep.decision?.confidence || 0) * 100).toFixed(1)}%
                   </span>
                 </div>
 
                 <div className="text-right hidden sm:block">
-                  <div className="flex items-center space-x-1 text-slate-400 text-[11px] font-mono">
-                    <Clock className="w-3 h-3 text-purple-400" />
+                  <div className="flex items-center gap-1 font-label-mono-sm text-secondary">
+                    <Clock className="w-3 h-3" />
                     <span>{rep.total_latency_ms.toLocaleString()} ms</span>
                   </div>
                 </div>
 
-                <div className="p-1 rounded bg-[#161c28] border border-[#242d3d] text-slate-400">
+                <div className="p-1 rounded bg-surface-container-highest border border-outline-variant/30 text-on-surface-variant">
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>

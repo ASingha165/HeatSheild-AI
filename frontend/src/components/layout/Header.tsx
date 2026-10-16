@@ -1,5 +1,5 @@
-import React from 'react';
-import { Cpu, Cloud, Wifi, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Cpu, Cloud, Wifi, RefreshCw, Clock, Menu } from 'lucide-react';
 import type { HealthResponse, SystemConfigResponse } from '../../types/api';
 
 interface HeaderProps {
@@ -7,8 +7,10 @@ interface HeaderProps {
   subtitle: string;
   health: HealthResponse | null;
   config: SystemConfigResponse | null;
+  apiLatencyMs: number | null;
   isLoading: boolean;
   onRefresh: () => void;
+  onOpenMobileNav?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,62 +18,118 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle,
   health,
   config,
+  apiLatencyMs,
   isLoading,
   onRefresh,
+  onOpenMobileNav,
 }) => {
   const isApiOnline = health !== null && health.status === 'healthy';
-  const isDeciderReady = health?.decider_status === 'ready' || config?.decider.is_engine_loaded;
+  const isDeciderLoaded = config?.decider.is_engine_loaded || health?.decider_status === 'ready';
   const isBedrockConfigured = config?.bedrock.is_configured;
 
+  const [utcTime, setUtcTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setUtcTime(now.toTimeString().split(' ')[0] + ' UTC');
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <header className="h-20 bg-[#111620] border-b border-[#242d3d] px-6 flex items-center justify-between shrink-0">
-      {/* Title */}
-      <div>
-        <h2 className="text-xl font-bold text-slate-100 tracking-tight">{title}</h2>
-        <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+    <header className="min-h-16 sm:h-20 bg-surface-container-lowest/85 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.25)] flex items-center justify-between px-4 sm:px-6 py-2.5 shrink-0 z-30 sticky top-0">
+      {/* Left: Mobile Nav Toggle + Title Banner */}
+      <div className="flex items-center gap-3 min-w-0 mr-2">
+        {onOpenMobileNav && (
+          <button
+            type="button"
+            onClick={onOpenMobileNav}
+            className="lg:hidden p-2 rounded-lg bg-surface-container-high border border-outline-variant/30 text-on-surface hover:text-primary transition-colors cursor-pointer shrink-0"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        <div className="flex flex-col min-w-0">
+          <h1 className="font-headline-sm text-on-surface font-bold text-sm sm:text-base lg:text-lg tracking-tight truncate">
+            {title}
+          </h1>
+          <div className="flex items-center gap-2 text-on-surface-variant font-label-mono-sm text-[11px] mt-0.5 flex-wrap">
+            <span className="flex items-center gap-1 text-secondary shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+              <span>LIVE TELEMETRY</span>
+            </span>
+            <span className="text-outline hidden xs:inline">•</span>
+            <span className="hidden xs:flex items-center gap-1 text-on-surface-variant shrink-0">
+              <Clock className="w-3 h-3 text-outline" />
+              <span>{utcTime || 'LIVE'}</span>
+            </span>
+            <span className="text-outline hidden md:inline">•</span>
+            <span className="text-outline hidden md:inline truncate max-w-xs">{subtitle}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Subsystem Status Indicators */}
-      <div className="flex items-center space-x-3">
-        {/* Strands Decider Subsystem */}
-        <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#161c28] border border-[#242d3d] text-xs">
-          <Cpu className={`w-3.5 h-3.5 ${isDeciderReady ? 'text-cyan-400' : 'text-amber-400'}`} />
-          <span className="text-slate-400">Decider 2B:</span>
-          <span className="font-semibold text-slate-200">
-            {config?.decider.checkpoint ? 'hobson-v21 (Active)' : isDeciderReady ? 'Ready' : 'Standby'}
-          </span>
+      {/* Right: Subsystem Telemetry Status Badges */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Strands Decider 2B Status */}
+        <div
+          title={config?.decider.checkpoint || 'StrandsAgents/strands-decider-2B-hobson-v21'}
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high border border-outline-variant/30 text-xs"
+        >
           <span
-            className={`w-2 h-2 rounded-full ${isDeciderReady ? 'bg-cyan-400 animate-pulse' : 'bg-amber-400'}`}
+            className={`w-2 h-2 rounded-full ${isDeciderLoaded ? 'bg-primary animate-ping' : 'bg-secondary'}`}
           />
+          <Cpu className="w-3.5 h-3.5 text-secondary" />
+          <span className="font-label-mono-sm text-on-surface-variant hidden xl:inline">Decider 2B:</span>
+          <span className="font-label-mono-sm font-bold text-primary text-[11px]">
+            {isDeciderLoaded ? 'Ready' : 'Standby'}
+          </span>
         </div>
 
-        {/* Amazon Bedrock Subsystem */}
-        <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#161c28] border border-[#242d3d] text-xs">
-          <Cloud className={`w-3.5 h-3.5 ${isBedrockConfigured ? 'text-emerald-400' : 'text-amber-400'}`} />
-          <span className="text-slate-400">Bedrock:</span>
-          <span className="font-semibold text-slate-200">
-            {isBedrockConfigured ? 'Live IAM' : 'Dev Mode (Fallback)'}
-          </span>
+        {/* Amazon Bedrock Status */}
+        <div
+          title={config?.bedrock.status_message || 'AWS Bedrock configuration status'}
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high border border-outline-variant/30 text-xs"
+        >
+          <Cloud className={`w-3.5 h-3.5 ${isBedrockConfigured ? 'text-primary' : 'text-tertiary'}`} />
+          <span className="font-label-mono-sm text-on-surface-variant hidden xl:inline">Bedrock:</span>
           <span
-            className={`w-2 h-2 rounded-full ${isBedrockConfigured ? 'bg-emerald-400' : 'bg-amber-400'}`}
-          />
-        </div>
-
-        {/* API Ping & Refresh Button */}
-        <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#161c28] border border-[#242d3d] text-xs">
-          <Wifi className={`w-3.5 h-3.5 ${isApiOnline ? 'text-emerald-400' : 'text-rose-400'}`} />
-          <span className="font-medium text-slate-200">
-            {isApiOnline ? 'API Connected' : 'Connecting...'}
+            className={`font-label-mono-sm font-bold text-[11px] ${
+              isBedrockConfigured ? 'text-primary' : 'text-tertiary'
+            }`}
+          >
+            {isBedrockConfigured ? `Live IAM (${config.bedrock.region})` : 'Dev Mode (Fallback)'}
           </span>
         </div>
 
+        {/* FastAPI Connectivity with Real Measured Roundtrip Latency */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high border border-outline-variant/30 text-xs">
+          <Wifi className={`w-3.5 h-3.5 ${isApiOnline ? 'text-primary' : 'text-error'}`} />
+          <span
+            className={`font-label-mono-sm font-semibold text-[11px] ${
+              isApiOnline ? 'text-primary' : 'text-error'
+            }`}
+          >
+            {isApiOnline
+              ? `API ${apiLatencyMs !== null ? `${apiLatencyMs}ms` : 'Online'}`
+              : 'Connecting...'}
+          </span>
+        </div>
+
+        {/* Manual Telemetry Refresh Trigger */}
         <button
+          type="button"
           onClick={onRefresh}
           disabled={isLoading}
-          title="Refresh Backend Subsystems"
-          className="p-2 rounded-lg bg-[#161c28] border border-[#242d3d] hover:bg-[#1c2433] text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+          title="Refresh Subsystem Telemetry"
+          className="p-1.5 sm:p-2 rounded-lg bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-50 cursor-pointer shrink-0"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-secondary' : ''}`} />
         </button>
       </div>
     </header>
