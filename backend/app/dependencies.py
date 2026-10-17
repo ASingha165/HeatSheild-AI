@@ -44,8 +44,8 @@ def get_bedrock_service() -> BedrockService:
     """Dependency provider returning the BedrockService instance."""
     global _bedrock_service
     if _bedrock_service is None:
-        region = os.getenv("AWS_REGION", "us-east-1")
-        model_id = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+        region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+        model_id = os.getenv("BEDROCK_MODEL_ID", "global.amazon.nova-2-lite-v1:0")
         _bedrock_service = BedrockService(region_name=region, model_id=model_id)
     return _bedrock_service
 

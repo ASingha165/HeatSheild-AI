@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     selector = get_tool_selector()
     bedrock = get_bedrock_service()
     
-    logger.info("Decider configured for checkpoint: %s (device: %s)", selector.checkpoint, selector.device)
+    logger.info("Decider configured for checkpoint: %s (device: %s, ready: %s)", selector.checkpoint, selector.device, selector.is_ready)
     logger.info("Bedrock configured for region: %s (model: %s)", bedrock.region_name, bedrock.model_id)
     
     yield

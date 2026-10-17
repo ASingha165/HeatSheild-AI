@@ -23,7 +23,7 @@ def get_health(
     bedrock: BedrockService = Depends(get_bedrock_service),
 ) -> HealthResponse:
     """Returns application health and subsystem statuses."""
-    decider_status = "ready" if selector._engine_initialized or selector.remote_url else "unloaded"
+    decider_status = "ready" if selector.is_ready else "unloaded"
     bedrock_cfg = bedrock.get_config_status()
     bedrock_status = "configured" if bedrock_cfg.is_configured else "unconfigured_dev_mode"
 
@@ -51,7 +51,8 @@ def get_config_status(
         "device": selector.device,
         "confidence_threshold": selector.confidence_threshold,
         "remote_url": selector.remote_url,
-        "is_engine_loaded": selector._engine_initialized,
+        "is_engine_loaded": selector.is_ready,
+        "is_ready": selector.is_ready,
     }
     bedrock_info = bedrock.get_config_status()
 

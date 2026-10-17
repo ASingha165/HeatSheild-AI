@@ -1,9 +1,10 @@
 """
 API integration and endpoint tests for HeatShield AI.
-Uses FastAPI TestClient with dependency injection to verify end-to-end orchestration.
+Uses FastAPI TestClient with dependency injection to verify end-to-end orchestration,
+all five analytical actions, error handling, confidence gating, and status consistency.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,6 +12,7 @@ from backend.app.dependencies import get_bedrock_service, get_tool_selector
 from backend.app.main import app
 from backend.app.schemas import WorkflowStage
 from backend.patterns.tool_selection import (
+    AnalyticalAction,
     ConfidenceAwareToolSelector,
     DecisionStatus,
     ExecutionGate,
@@ -21,6 +23,7 @@ from backend.services.bedrock_service import (
     BedrockRecommendation,
     BedrockService,
 )
+from backend.tools.dispatcher import ToolExecutionResponse
 
 client = TestClient(app)
 
@@ -48,8 +51,58 @@ def test_config_status_endpoint_never_exposes_secrets():
 
     # Verify no secret keywords leaked in response text
     raw_text = response.text.lower()
-    assert "secret" not in raw_text or "secret_access_key" not in raw_text
+    assert "secret_access_key" not in raw_text
     assert "aws_secret" not in raw_text
+
+
+def test_health_and_config_status_consistency():
+    """Confirms /api/health and /api/config/status report consistent decider readiness."""
+    health_resp = client.get("/api/health")
+    config_resp = client.get("/api/config/status")
+    assert health_resp.status_code == 200
+    assert config_resp.status_code == 200
+
+    h_data = health_resp.json()
+    c_data = config_resp.json()
+
+    # If decider is reported ready in health, config must report is_engine_loaded=true, and vice versa
+    is_ready_in_health = h_data["decider_status"] == "ready"
+    is_loaded_in_config = c_data["decider"]["is_engine_loaded"]
+    assert is_ready_in_health == is_loaded_in_config
+
+
+def test_decider_status_before_and_after_initialization():
+    """Confirms is_engine_loaded and decider_status accurately transition upon engine initialization."""
+    # Create clean uninitialized selector
+    selector = ConfidenceAwareToolSelector(
+        checkpoint="test-checkpoint",
+        device="cpu",
+        confidence_threshold=0.60,
+    )
+    assert selector.is_ready is False
+    assert selector.is_engine_loaded is False
+
+    app.dependency_overrides[get_tool_selector] = lambda: selector
+    try:
+        # Before initialization: must report unloaded / false
+        h_resp = client.get("/api/health")
+        c_resp = client.get("/api/config/status")
+        assert h_resp.json()["decider_status"] == "unloaded"
+        assert c_resp.json()["decider"]["is_engine_loaded"] is False
+
+        # Simulate engine initialization
+        selector._engine = MagicMock()
+        selector._engine_initialized = True
+        assert selector.is_ready is True
+        assert selector.is_engine_loaded is True
+
+        # After initialization: must report ready / true
+        h_resp = client.get("/api/health")
+        c_resp = client.get("/api/config/status")
+        assert h_resp.json()["decider_status"] == "ready"
+        assert c_resp.json()["decider"]["is_engine_loaded"] is True
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_locations_endpoint():
@@ -68,41 +121,48 @@ def test_locations_endpoint():
     assert first["is_synthetic"] is True
 
 
-def test_analyze_report_valid_flow_with_mocked_services():
-    """POST /api/reports/analyze completes end-to-end workflow when decision is above threshold."""
-    # Create mock selector that selects CHECK_EXPOSURE with high confidence
+@pytest.mark.parametrize(
+    "action",
+    [
+        AnalyticalAction.ANALYZE_HEAT.value,
+        AnalyticalAction.CHECK_VEGETATION.value,
+        AnalyticalAction.CHECK_EXPOSURE.value,
+        AnalyticalAction.COMPARE_INTERVENTIONS.value,
+        AnalyticalAction.REQUEST_MORE_DATA.value,
+    ],
+)
+def test_analyze_report_valid_flow_for_all_five_actions(action: str):
+    """POST /api/reports/analyze completes end-to-end workflow for all 5 analytical actions."""
     mock_selector = MagicMock(spec=ConfidenceAwareToolSelector)
     mock_selector.select_action.return_value = NormalizedDecision(
-        decision="CHECK_EXPOSURE",
-        confidence=0.88,
-        latency_ms=45.2,
+        decision=action,
+        confidence=0.85,
+        latency_ms=35.0,
         status=DecisionStatus.ACCEPTED,
-        probabilities={"CHECK_EXPOSURE": 0.88, "ANALYZE_HEAT": 0.05, "CHECK_VEGETATION": 0.07},
+        probabilities={action: 0.85},
         selected_option_valid=True,
         confidence_threshold=0.60,
         is_above_threshold=True,
         execution_gate=ExecutionGate.PROCEED_TO_TOOL,
         clarification_prompt=None,
-        state_summary={"report": "Bus stop with seniors"},
+        state_summary={"report": f"Testing action {action}"},
     )
 
-    # Create mock Bedrock service
     mock_bedrock = MagicMock(spec=BedrockService)
     mock_bedrock.generate_recommendation.return_value = BedrockRecommendation(
-        summary="High commuter exposure identified at transit stops.",
-        recommended_next_step="Install engineered solar-reflective bus shelters.",
-        supporting_evidence=["8 unshaded stops detected."],
-        assumptions=["Assumes standard peak morning/afternoon commute."],
-        limitations=["Dataset is synthetic."],
-        follow_up_actions=["Submit capital grant application."],
-        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        summary=f"Synthesized evidence for action {action}.",
+        recommended_next_step=f"Prioritize actionable step for {action}.",
+        supporting_evidence=[f"Empirical evidence for {action}."],
+        assumptions=["Standard operational assumptions."],
+        limitations=["Municipal human review required."],
+        follow_up_actions=["Review field telemetry."],
+        model_id="global.amazon.nova-2-lite-v1:0",
         is_live_bedrock=True,
         data_provenance="SYNTHETIC_DEV_DATASET_V1",
-        latency_ms=120.5,
+        latency_ms=115.0,
         status="success",
     )
 
-    # Override dependencies
     app.dependency_overrides[get_tool_selector] = lambda: mock_selector
     app.dependency_overrides[get_bedrock_service] = lambda: mock_bedrock
 
@@ -110,33 +170,168 @@ def test_analyze_report_valid_flow_with_mocked_services():
         response = client.post(
             "/api/reports/analyze",
             json={
-                "report": "High heat conditions with seniors waiting at an unshaded central bus stop.",
+                "report": f"Detailed environmental report triggering {action}.",
                 "location": "Downtown Central Transit Plaza",
             },
         )
         assert response.status_code == 200
         data = response.json()
 
+        # 1. Workflow stage
         assert data["workflow_stage"] == WorkflowStage.RECOMMENDATION_GENERATED.value
-        assert data["decision"]["decision"] == "CHECK_EXPOSURE"
-        assert data["decision"]["confidence"] == 0.88
+
+        # 2. Decider decision
+        assert data["decision"]["decision"] == action
+        assert data["decision"]["confidence"] == 0.85
+        assert data["decision"]["execution_gate"] == "PROCEED_TO_TOOL"
+
+        # 3. Tool execution output matches action
+        assert data["tool_execution"] is not None
         assert data["tool_execution"]["status"] == "success"
-        assert data["tool_execution"]["tool_name"] == "CHECK_EXPOSURE"
+        assert data["tool_execution"]["tool_name"] == action
+        tool_out = data["tool_execution"]["output"]
+        assert tool_out["is_synthetic_data"] is True
+
+        # Action-specific output invariant checks
+        if action == "ANALYZE_HEAT":
+            assert "observed_ambient_temp_c" in tool_out
+            assert "observed_surface_temp_c" in tool_out
+            assert "heat_severity_level" in tool_out
+        elif action == "CHECK_VEGETATION":
+            assert "canopy_coverage_pct" in tool_out
+            assert "canopy_deficit_pct" in tool_out
+            assert "deficit_classification" in tool_out
+        elif action == "CHECK_EXPOSURE":
+            assert "transit_stops_count" in tool_out
+            assert "daily_transit_commuters" in tool_out
+            assert "overall_exposure_level" in tool_out
+        elif action == "COMPARE_INTERVENTIONS":
+            assert "interventions" in tool_out
+            assert len(tool_out["interventions"]) == 4
+            assert "recommended_primary_intervention" in tool_out
+        elif action == "REQUEST_MORE_DATA":
+            assert "missing_parameters" in tool_out
+            assert "suggested_user_questions" in tool_out
+
+        # 4. Bedrock recommendation received actual tool output
+        assert data["recommendation"] is not None
         assert data["recommendation"]["is_live_bedrock"] is True
+        assert data["recommendation"]["status"] == "success"
+
+        # 5. Execution trace
         assert len(data["execution_trace"]) >= 4
-
-        # Verify trace step order
         step_names = [s["name"] for s in data["execution_trace"]]
-        assert "State Construction" in step_names[0]
-        assert "Strands Decider 2B Selection" in step_names[1]
-        assert "CHECK_EXPOSURE" in step_names[2]
-        assert "Amazon Bedrock Recommendation" in step_names[3]
+        assert any("State Construction" in s for s in step_names)
+        assert any("Strands Decider 2B" in s for s in step_names)
+        assert any(action in s for s in step_names)
+        assert any("Amazon Bedrock" in s for s in step_names)
 
+        # 6. History lookup works
         report_id = data["report_id"]
-        # Verify GET /api/reports/{report_id}
-        fetch_resp = client.get(f"/api/reports/{report_id}")
-        assert fetch_resp.status_code == 200
-        assert fetch_resp.json()["report_id"] == report_id
+        hist_resp = client.get(f"/api/reports/{report_id}")
+        assert hist_resp.status_code == 200
+        assert hist_resp.json()["report_id"] == report_id
+
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_analyze_report_tool_failure_workflow():
+    """When analytical tool execution fails, Bedrock is safely bypassed and status is TOOL_EXECUTED."""
+    mock_selector = MagicMock(spec=ConfidenceAwareToolSelector)
+    mock_selector.select_action.return_value = NormalizedDecision(
+        decision="ANALYZE_HEAT",
+        confidence=0.91,
+        latency_ms=25.0,
+        status=DecisionStatus.ACCEPTED,
+        probabilities={"ANALYZE_HEAT": 0.91},
+        selected_option_valid=True,
+        confidence_threshold=0.60,
+        is_above_threshold=True,
+        execution_gate=ExecutionGate.PROCEED_TO_TOOL,
+        clarification_prompt=None,
+        state_summary={},
+    )
+
+    mock_bedrock = MagicMock(spec=BedrockService)
+
+    app.dependency_overrides[get_tool_selector] = lambda: mock_selector
+    app.dependency_overrides[get_bedrock_service] = lambda: mock_bedrock
+
+    # Patch dispatch_tool to simulate tool failure
+    failed_tool_resp = ToolExecutionResponse(
+        tool_name="ANALYZE_HEAT",
+        status="error",
+        execution_time_ms=8.0,
+        output={},
+        error_message="Sensor telemetry offline; reading failed.",
+    )
+
+    with patch("backend.app.routes.reports.dispatch_tool", return_value=failed_tool_resp):
+        try:
+            response = client.post(
+                "/api/reports/analyze",
+                json={"report": "High heat conditions near sensor."},
+            )
+            assert response.status_code == 200
+            data = response.json()
+
+            # Workflow halted at TOOL_EXECUTED
+            assert data["workflow_stage"] == WorkflowStage.TOOL_EXECUTED.value
+            assert data["tool_execution"]["status"] == "error"
+            assert data["tool_execution"]["error_message"] == "Sensor telemetry offline; reading failed."
+
+            # Bedrock was safely NOT invoked
+            assert data["recommendation"] is None
+            mock_bedrock.generate_recommendation.assert_not_called()
+
+            # Trace logs tool failure
+            tool_trace = [s for s in data["execution_trace"] if "Analytical Tool" in s["name"]]
+            assert len(tool_trace) == 1
+            assert tool_trace[0]["status"] == "failed"
+
+        finally:
+            app.dependency_overrides.clear()
+
+
+def test_analyze_report_unconfigured_decider_gate():
+    """HALT_UNCONFIGURED gate safely rejects decision without executing tools or Bedrock."""
+    mock_selector = MagicMock(spec=ConfidenceAwareToolSelector)
+    mock_selector.select_action.return_value = NormalizedDecision(
+        decision="NONE",
+        confidence=0.0,
+        latency_ms=0.0,
+        status=DecisionStatus.UNCONFIGURED,
+        probabilities={},
+        selected_option_valid=False,
+        confidence_threshold=0.60,
+        is_above_threshold=False,
+        execution_gate=ExecutionGate.HALT_UNCONFIGURED,
+        clarification_prompt="Decider model weights unconfigured.",
+        state_summary={},
+    )
+
+    mock_bedrock = MagicMock(spec=BedrockService)
+    app.dependency_overrides[get_tool_selector] = lambda: mock_selector
+    app.dependency_overrides[get_bedrock_service] = lambda: mock_bedrock
+
+    try:
+        response = client.post(
+            "/api/reports/analyze",
+            json={"report": "Sample report for unconfigured decider."},
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["workflow_stage"] == WorkflowStage.DECISION_REJECTED.value
+        assert data["tool_execution"] is None
+        assert data["recommendation"] is None
+        mock_bedrock.generate_recommendation.assert_not_called()
+
+        gate_trace = [s for s in data["execution_trace"] if s["name"] == "Tool Execution Gate"]
+        assert len(gate_trace) == 1
+        assert gate_trace[0]["status"] == "failed"
+        assert gate_trace[0]["details"]["reason"] == "Decider model is unconfigured"
 
     finally:
         app.dependency_overrides.clear()

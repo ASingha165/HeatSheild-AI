@@ -82,7 +82,7 @@ export const AboutView: React.FC = () => {
             </ul>
           </div>
           <div className="pt-3 border-t border-outline-variant/20 font-label-mono-sm text-tertiary font-mono">
-            Model: anthropic.claude-3-haiku-20240307-v1:0
+            Model: Amazon Nova 2 Lite (global.amazon.nova-2-lite-v1:0)
           </div>
         </div>
       </div>

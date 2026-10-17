@@ -35,10 +35,12 @@ export const App: React.FC = () => {
   const [apiLatency, setApiLatency] = useState<number | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
 
-  // Load initial backend telemetry and measure round-trip latency
-  const fetchSubsystemStatus = async () => {
-    setIsLoadingStatus(true);
-    setApiError(null);
+  // Load backend telemetry and measure round-trip latency
+  const fetchSubsystemStatus = async (silent: boolean = false) => {
+    if (!silent) {
+      setIsLoadingStatus(true);
+      setApiError(null);
+    }
     const start = performance.now();
     try {
       const [healthData, configData, locationsData] = await Promise.all([
@@ -52,11 +54,15 @@ export const App: React.FC = () => {
       setConfig(configData);
       setLocations(locationsData.locations || []);
     } catch (err: any) {
-      setApiError(
-        `Backend API connection error: ${err.message}. Ensure backend is running at http://127.0.0.1:8000.`
-      );
+      if (!silent) {
+        setApiError(
+          `Backend API connection error: ${err.message}. Ensure backend is running at http://127.0.0.1:8000.`
+        );
+      }
     } finally {
-      setIsLoadingStatus(false);
+      if (!silent) {
+        setIsLoadingStatus(false);
+      }
     }
   };
 
@@ -90,6 +96,9 @@ export const App: React.FC = () => {
       setApiError(`Decision Agent Execution Error: ${err.message}`);
     } finally {
       setIsSubmitting(false);
+      // Immediately refresh subsystem telemetry (Decider readiness & Bedrock status)
+      // to reflect post-inference state on both success and error paths
+      fetchSubsystemStatus(true);
     }
   };
 

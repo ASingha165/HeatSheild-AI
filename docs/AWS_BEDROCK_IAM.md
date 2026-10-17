@@ -28,8 +28,9 @@ Attach the following policy to your EC2 IAM Role (`HeatShield-EC2-Role`):
         "bedrock:InvokeModelWithResponseStream"
       ],
       "Resource": [
-        "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
         "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
         "arn:aws:bedrock:*::foundation-model/amazon.titan-text-express-v1"
       ]
     }

@@ -8,6 +8,7 @@ calibrated tool routing in autonomous environmental intelligence agents.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
@@ -188,32 +189,68 @@ class ConfidenceAwareToolSelector:
         self.device = device
         self.confidence_threshold = confidence_threshold
         self._engine: Optional[SystemOneEngine] = engine
-        self.remote_url = remote_url
+        self.remote_url = remote_url.strip() if remote_url else None
         self._engine_initialized = engine is not None
+        self._init_lock = threading.Lock()
+        self._remote_verified: Optional[bool] = None
 
-    def initialize_engine(self) -> bool:
-        """Loads the local StrandsDeciderModel engine if not already provided."""
+    @property
+    def is_engine_loaded(self) -> bool:
+        """Returns True only if in-process model weights are loaded and active."""
+        return self._engine is not None
+
+    @property
+    def is_ready(self) -> bool:
+        """Returns True only if the decision engine (local loaded or verified remote) is ready for inference."""
         if self._engine is not None:
             return True
         if self.remote_url:
-            # When remote URL is set, we use HTTP requests rather than in-process weights
-            return True
-            
-        try:
-            logger.info("Initializing Strands Decider engine with checkpoint: %s on %s", self.checkpoint, self.device)
-            self._engine = load_engine(
-                checkpoint=self.checkpoint,
-                device=self.device,
-                use_prefix_cache=True,
-            )
-            self._engine_initialized = True
-            logger.info("Strands Decider engine successfully loaded.")
-            return True
-        except Exception as exc:
-            logger.error("Failed to load Strands Decider engine: %s", exc)
-            self._engine = None
-            self._engine_initialized = False
+            return self._verify_remote_engine()
+        return False
+
+    def _verify_remote_engine(self) -> bool:
+        """Verifies that the remote Decider HTTP service is reachable and responsive."""
+        if not self.remote_url:
             return False
+        try:
+            import httpx
+            url = f"{self.remote_url.rstrip('/')}/health"
+            resp = httpx.get(url, timeout=2.0)
+            is_ok = resp.status_code == 200
+            self._remote_verified = is_ok
+            return is_ok
+        except Exception as exc:
+            logger.debug("Remote Decider verification failed for %s: %s", self.remote_url, exc)
+            self._remote_verified = False
+            return False
+
+    def initialize_engine(self) -> bool:
+        """Loads the local StrandsDeciderModel engine if not already provided, or verifies remote service."""
+        if self._engine is not None:
+            return True
+        if self.remote_url:
+            verified = self._verify_remote_engine()
+            self._engine_initialized = verified
+            return verified
+
+        with self._init_lock:
+            if self._engine is not None:
+                return True
+            try:
+                logger.info("Initializing Strands Decider engine with checkpoint: %s on %s", self.checkpoint, self.device)
+                self._engine = load_engine(
+                    checkpoint=self.checkpoint,
+                    device=self.device,
+                    use_prefix_cache=True,
+                )
+                self._engine_initialized = True
+                logger.info("Strands Decider engine successfully loaded.")
+                return True
+            except Exception as exc:
+                logger.error("Failed to load Strands Decider engine: %s", exc)
+                self._engine = None
+                self._engine_initialized = False
+                return False
 
     def create_choice_question(self) -> ChoiceQuestion:
         """Constructs the typed ChoiceQuestion according to the official schema."""

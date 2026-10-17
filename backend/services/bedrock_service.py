@@ -4,6 +4,7 @@ Amazon Bedrock Integration Service for HeatShield AI.
 Generates evidence-based, transparent environmental recommendations grounded
 exclusively in actual analytical tool results and verified user reports.
 Supports AWS IAM role-based authentication and standard credential provider chains.
+Uses the boto3 Bedrock Runtime Converse API.
 """
 
 from __future__ import annotations
@@ -11,13 +12,23 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 import boto3
 from botocore.config import Config
-from botocore.exceptions import BotoCoreError, ClientError, EndpointConnectionError, ReadTimeoutError
+from botocore.exceptions import (
+    BotoCoreError,
+    ClientError,
+    ConnectTimeoutError,
+    CredentialRetrievalError,
+    EndpointConnectionError,
+    NoCredentialsError,
+    PartialCredentialsError,
+    ReadTimeoutError,
+)
 
 logger = logging.getLogger("heatshield.services.bedrock")
 if not logger.handlers:
@@ -27,11 +38,113 @@ if not logger.handlers:
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
+# Regex patterns for scrubbing inadvertent credential leaks in logs/messages
+_AWS_KEY_PATTERN = re.compile(r"(?<![A-Za-z0-9/+=])(?:AKIA|ASIA)[0-9A-Z]{16}(?![A-Za-z0-9/+=])")
+_AWS_SECRET_PATTERN = re.compile(
+    r"(?i)(?:aws_secret_access_key|secret_key|session_token|authorization)[\s:=]+['\"]?([A-Za-z0-9/+=]{16,})['\"]?"
+)
+
+
+def sanitize_text(text: str) -> str:
+    """Removes any potential AWS access keys or secret tokens from text."""
+    if not text:
+        return ""
+    cleaned = _AWS_KEY_PATTERN.sub("[REDACTED_AWS_KEY]", text)
+    cleaned = _AWS_SECRET_PATTERN.sub(r"aws_credential=[REDACTED_CREDENTIAL]", cleaned)
+    return cleaned
+
+
+def classify_aws_error(err: Exception, model_id: str = "", region_name: str = "") -> Tuple[str, str]:
+    """
+    Classifies AWS/boto3 errors into sanitized categories without leaking any credentials.
+    Returns (category, sanitized_reason).
+    Categories:
+      - 'missing_credentials'
+      - 'expired_credentials'
+      - 'access_denied'
+      - 'model_or_profile_error'
+      - 'throttling_or_service_error'
+      - 'network_or_timeout_error'
+      - 'client_error'
+      - 'unexpected_error'
+    """
+    if isinstance(err, (NoCredentialsError, PartialCredentialsError, CredentialRetrievalError)):
+        return (
+            "missing_credentials",
+            "No AWS credentials detected in environment, IAM role, or AWS profile.",
+        )
+
+    if isinstance(err, (EndpointConnectionError, ConnectTimeoutError, ReadTimeoutError)):
+        return (
+            "network_or_timeout_error",
+            f"Network connection or timeout communicating with Bedrock in region {region_name or 'configured'}.",
+        )
+
+    if isinstance(err, ClientError):
+        error_dict = err.response.get("Error", {})
+        code = str(error_dict.get("Code", "ClientError"))
+        msg = str(error_dict.get("Message", ""))
+        low_msg = msg.lower()
+
+        # 1. Expired credentials
+        if code in ("ExpiredToken", "ExpiredTokenException", "RequestExpired") or "token is expired" in low_msg:
+            return (
+                "expired_credentials",
+                "AWS credentials expired (session token expired; refresh temporary workshop credentials).",
+            )
+
+        # 2. Access denied
+        if (
+            code in ("AccessDeniedException", "AccessDenied", "UnauthorizedException", "AuthFailure")
+            or "not authorized" in low_msg
+            or "access denied" in low_msg
+        ):
+            return (
+                "access_denied",
+                f"AWS Bedrock access denied for model '{model_id}' (verify IAM permissions or model entitlement in {region_name}).",
+            )
+
+        # 3. Model or inference-profile errors
+        if (
+            code in ("ResourceNotFoundException", "ValidationException", "ModelNotReadyException", "UnknownOperationException")
+            or "inference profile" in low_msg
+            or "model identifier" in low_msg
+            or "not found" in low_msg
+        ):
+            return (
+                "model_or_profile_error",
+                f"Amazon Bedrock model or inference-profile error: {code}",
+            )
+
+        # 4. Throttling and service failures
+        if code in (
+            "ThrottlingException",
+            "ServiceUnavailableException",
+            "InternalServerException",
+            "ModelErrorException",
+            "ModelTimeoutException",
+            "TooManyRequestsException",
+        ):
+            return (
+                "throttling_or_service_error",
+                f"Amazon Bedrock service failure or rate limit: {code}",
+            )
+
+        return (
+            "client_error",
+            f"Amazon Bedrock client error: {code}",
+        )
+
+    return (
+        "unexpected_error",
+        f"Unexpected error during Bedrock invocation: {type(err).__name__}",
+    )
+
 
 class BedrockConfigStatus(BaseModel):
     is_configured: bool = Field(..., description="Whether AWS credentials and Bedrock access are detected")
     region: str = Field(..., description="Configured AWS region")
-    model_id: str = Field(..., description="Target Amazon Bedrock foundation model ID")
+    model_id: str = Field(..., description="Target Amazon Bedrock foundation model ID or inference profile")
     auth_mechanism: str = Field(..., description="Authentication provider type (iam_role, env_credentials, unconfigured)")
     status_message: str = Field(..., description="Human-readable integration status")
 
@@ -40,34 +153,43 @@ class BedrockRecommendation(BaseModel):
     summary: str = Field(..., description="Concise executive synthesis of findings")
     recommended_next_step: str = Field(..., description="Primary prioritized action or intervention")
     supporting_evidence: List[str] = Field(..., description="Empirical evidence cited directly from tool results")
-    assumptions: List[str] = Field(..., description="Transparent operational assumptions")
-    limitations: List[str] = Field(..., description="Data uncertainties and domain constraints")
+    assumptions: List[str] = Field(..., description="Transparent operational assumptions distinguishing observations")
+    limitations: List[str] = Field(..., description="Data uncertainties, missing measurements, and domain constraints")
     follow_up_actions: List[str] = Field(..., description="Actionable follow-up steps for municipal staff")
-    
+
     # Metadata & Provenance
     model_id: str
     is_live_bedrock: bool = Field(..., description="True if response was generated by live Amazon Bedrock API")
     data_provenance: str = Field(..., description="Dataset provenance flag")
     latency_ms: float = Field(..., description="Generation latency in milliseconds")
     status: str = Field(..., description="Status: 'success', 'dev_mode_fallback', or 'unconfigured'")
+    fallback_reason: Optional[str] = Field(default=None, description="Detailed reason if dev mode fallback was used")
 
 
 class BedrockService:
     """
     Production-conscious service for Amazon Bedrock generative reasoning.
     Grounds all outputs strictly in actual Decider choices and analytical tool outputs.
+    Follows: Environmental Report -> Strands Decider 2B -> Confidence Gate -> Analytical Tool -> Bedrock -> Recommendation.
     """
 
     SYSTEM_PROMPT = (
         "You are HeatShield AI's Environmental Resilience Reasoner, an expert municipal advisor. "
         "Your task is to synthesize an actionable recommendation based STRICTLY on the actual "
-        "analytical tool results and environmental state provided. "
+        "analytical tool results and environmental state provided.\n"
         "\nCRITICAL RULES:\n"
-        "1. Never invent environmental measurements or present hypothetical benefits as measured outcomes.\n"
-        "2. Never claim that any intervention has already been built or implemented.\n"
-        "3. Explicitly reflect all data limitations, missing information, and synthetic dataset labels.\n"
-        "4. Do NOT change or replace the analytical tool chosen by Strands Decider 2B.\n"
-        "5. Output valid, raw JSON only matching the requested schema with no surrounding Markdown ticks."
+        "1. DISTINGUISH OBSERVATIONS FROM ASSUMPTIONS: Ground all empirical claims in the supplied tool output. "
+        "Place verified measurements into 'supporting_evidence'. Place operational hypotheses into 'assumptions'.\n"
+        "2. IDENTIFY MISSING MEASUREMENTS: Explicitly identify missing sensors, unmeasured parameters, or uncertain fields in 'limitations'.\n"
+        "3. EXPLAIN UNCERTAINTY & LIMITATIONS: Note data provenance (e.g., synthetic development data vs live telemetry) "
+        "and sensor tolerances.\n"
+        "4. AVOID FABRICATION: Never invent environmental measurements or present hypothetical benefits as measured outcomes. "
+        "Never claim that an intervention has already been built or implemented.\n"
+        "5. PRESERVE HUMAN-REVIEW REQUIREMENTS: Municipal human review and on-the-ground verification are mandatory "
+        "before operational dispatch or capital allocation. Reflect this in 'limitations' and 'follow_up_actions'.\n"
+        "6. DO NOT EXECUTE OR REPLACE TOOLS: Strands Decider 2B has already selected the analytical action; "
+        "your role is synthesis and reasoning, not independent tool dispatch.\n"
+        "7. OUTPUT FORMAT: Output valid, raw JSON only matching the requested schema with no markdown ticks or preamble."
     )
 
     def __init__(
@@ -79,17 +201,32 @@ class BedrockService:
         timeout_seconds: int = 15,
         boto3_client: Optional[Any] = None,
     ):
-        self.region_name = region_name or os.getenv("AWS_REGION", "us-east-1")
-        self.model_id = model_id or os.getenv(
-            "BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0"
+        # Configure AWS Region: explicit argument -> AWS_REGION -> AWS_DEFAULT_REGION -> us-east-1
+        self.region_name = (
+            region_name
+            or os.getenv("AWS_REGION")
+            or os.getenv("AWS_DEFAULT_REGION")
+            or "us-east-1"
+        )
+        # Configure Model ID / Inference Profile:
+        # explicit argument -> BEDROCK_MODEL_ID -> global.amazon.nova-2-lite-v1:0
+        self.model_id = (
+            model_id
+            or os.getenv("BEDROCK_MODEL_ID")
+            or "global.amazon.nova-2-lite-v1:0"
         )
         self.temperature = float(os.getenv("BEDROCK_TEMPERATURE", str(temperature)))
         self.max_tokens = int(os.getenv("BEDROCK_MAX_TOKENS", str(max_tokens)))
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = int(os.getenv("BEDROCK_TIMEOUT_SECONDS", str(timeout_seconds)))
         self._client = boto3_client
 
+        # Truthful state tracking
+        self.last_error_category: Optional[str] = None
+        self.last_error_reason: Optional[str] = None
+        self.last_inference_successful: Optional[bool] = None
+
     def _get_client(self) -> Optional[Any]:
-        """Initializes or returns cached boto3 bedrock-runtime client."""
+        """Initializes or returns cached boto3 bedrock-runtime client using credential provider chain."""
         if self._client is not None:
             return self._client
         try:
@@ -97,7 +234,7 @@ class BedrockService:
             creds = session.get_credentials()
             if creds is None:
                 return None
-            
+
             boto_config = Config(
                 connect_timeout=5,
                 read_timeout=self.timeout_seconds,
@@ -106,11 +243,15 @@ class BedrockService:
             self._client = session.client("bedrock-runtime", config=boto_config)
             return self._client
         except Exception as exc:
-            logger.warning("Could not initialize boto3 bedrock-runtime client: %s", exc)
+            sanitized = sanitize_text(str(exc))
+            logger.warning("Could not initialize boto3 bedrock-runtime client: %s", sanitized)
             return None
 
     def get_config_status(self) -> BedrockConfigStatus:
-        """Inspects AWS credential provider chain without exposing secret keys."""
+        """
+        Inspects AWS credential provider chain without exposing secret keys or tokens.
+        Reports truthful status reflecting whether credentials exist, are expired, or live inference succeeded.
+        """
         try:
             session = boto3.Session(region_name=self.region_name)
             creds = session.get_credentials()
@@ -134,20 +275,33 @@ class BedrockService:
             else:
                 auth_type = f"provider_{method}"
 
+            # Provide truthful status based on recent inference results
+            if self.last_error_category == "expired_credentials":
+                status_msg = f"AWS credentials detected ({auth_type}), but session token is expired. Please refresh credentials."
+            elif self.last_error_category == "access_denied":
+                status_msg = f"AWS credentials detected ({auth_type}), but Bedrock model access denied for '{self.model_id}'."
+            elif self.last_error_category == "model_or_profile_error":
+                status_msg = f"AWS credentials detected ({auth_type}), but Bedrock model/inference-profile error occurred ({self.model_id})."
+            elif self.last_inference_successful:
+                status_msg = f"Live Amazon Bedrock inference verified via {auth_type} in {self.region_name} (Model: {self.model_id})."
+            else:
+                status_msg = f"AWS Bedrock configured via {auth_type} in {self.region_name} (Target model: {self.model_id})."
+
             return BedrockConfigStatus(
                 is_configured=True,
                 region=self.region_name,
                 model_id=self.model_id,
                 auth_mechanism=auth_type,
-                status_message=f"AWS Bedrock configured via {auth_type} in {self.region_name}.",
+                status_message=status_msg,
             )
         except Exception as exc:
+            sanitized = sanitize_text(str(exc))
             return BedrockConfigStatus(
                 is_configured=False,
                 region=self.region_name,
                 model_id=self.model_id,
                 auth_mechanism="error",
-                status_message=f"Error inspecting AWS configuration: {str(exc)}",
+                status_message=f"Error inspecting AWS configuration: {sanitized}",
             )
 
     def _build_prompt_payload(
@@ -158,7 +312,7 @@ class BedrockService:
         missing_information: Optional[List[str]] = None,
         location: Optional[str] = None,
     ) -> str:
-        """Constructs an evidence-dense prompt payload for Bedrock."""
+        """Constructs an evidence-dense prompt payload for Bedrock Converse API."""
         is_synthetic = tool_output.get("is_synthetic_data", True)
         data_label = tool_output.get("data_label", "SYNTHETIC_DEV_DATASET")
         disclaimer = tool_output.get("disclaimer", "Sample development data.")
@@ -177,14 +331,20 @@ class BedrockService:
             "actual_tool_output": tool_output,
             "missing_or_uncertain_information": missing_information or [],
             "known_limitations": known_limitations,
+            "grounding_requirements": {
+                "distinguish_observations_vs_assumptions": "Place verified tool numbers into supporting_evidence; operational hypotheses into assumptions.",
+                "missing_measurements": "Explicitly identify missing sensors, unmeasured parameters, or uncertain fields in limitations.",
+                "human_review_safeguards": "Specify municipal review and sensor ground-truthing in follow_up_actions and limitations.",
+                "no_fabrication": "Never invent environmental measurements or present hypothetical benefits as measured outcomes.",
+            },
             "required_response_format": {
                 "summary": "String (1-2 sentences summarizing verified findings)",
                 "recommended_next_step": "String (Single actionable priority step)",
                 "supporting_evidence": ["List of strings citing specific tool numbers/findings"],
-                "assumptions": ["List of transparent operational assumptions"],
-                "limitations": ["List of data constraints, noting synthetic provenance"],
-                "follow_up_actions": ["List of 2-3 concrete steps for municipal teams"]
-            }
+                "assumptions": ["List of transparent operational assumptions distinguishing observations"],
+                "limitations": ["List of data constraints, missing measurements, and synthetic provenance"],
+                "follow_up_actions": ["List of 2-3 concrete steps for municipal teams including human review"],
+            },
         }
         return json.dumps(payload, indent=2)
 
@@ -197,7 +357,7 @@ class BedrockService:
         location: Optional[str] = None,
     ) -> BedrockRecommendation:
         """
-        Invokes Amazon Bedrock to synthesize evidence into a transparent recommendation.
+        Invokes Amazon Bedrock Converse API to synthesize evidence into a transparent recommendation.
         If credentials or model access are unavailable, safely falls back to a deterministic,
         clearly labeled development recommendation without fabricating model calls.
         """
@@ -207,6 +367,9 @@ class BedrockService:
         # If AWS is unconfigured, return transparent labeled dev mode response
         if not config_status.is_configured:
             logger.info("Bedrock is unconfigured. Emitting transparent development synthesis.")
+            self.last_error_category = "missing_credentials"
+            self.last_error_reason = "Bedrock credentials unconfigured"
+            self.last_inference_successful = False
             return self._generate_dev_mode_synthesis(
                 report=report,
                 decider_action=decider_action,
@@ -215,11 +378,15 @@ class BedrockService:
                 location=location,
                 start_time=start_time,
                 status_reason="Bedrock credentials unconfigured",
+                status_category="missing_credentials",
             )
 
         client = self._get_client()
         if client is None:
             logger.warning("Bedrock client unavailable despite detected credentials. Using dev mode fallback.")
+            self.last_error_category = "missing_credentials"
+            self.last_error_reason = "Bedrock client initialization failed"
+            self.last_inference_successful = False
             return self._generate_dev_mode_synthesis(
                 report=report,
                 decider_action=decider_action,
@@ -228,6 +395,7 @@ class BedrockService:
                 location=location,
                 start_time=start_time,
                 status_reason="Bedrock client initialization failed",
+                status_category="missing_credentials",
             )
 
         prompt_content = self._build_prompt_payload(
@@ -239,9 +407,8 @@ class BedrockService:
         )
 
         try:
-            logger.info("Invoking Amazon Bedrock model '%s' in %s...", self.model_id, self.region_name)
-            
-            # Using Bedrock Converse API (Standard across Claude 3, Nova, Titan, Llama)
+            logger.info("Invoking Amazon Bedrock model '%s' in %s via Converse API...", self.model_id, self.region_name)
+
             response = client.converse(
                 modelId=self.model_id,
                 messages=[
@@ -256,31 +423,57 @@ class BedrockService:
                     "temperature": self.temperature,
                 },
             )
-            
+
             latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
             output_msg = response.get("output", {}).get("message", {})
             content_blocks = output_msg.get("content", [])
             raw_text = content_blocks[0].get("text", "") if content_blocks else ""
 
-            # Parse JSON response
+            # Robust JSON extraction
             cleaned_text = raw_text.strip()
             if cleaned_text.startswith("```json"):
                 cleaned_text = cleaned_text[7:]
-            if cleaned_text.startswith("```"):
+            elif cleaned_text.startswith("```"):
                 cleaned_text = cleaned_text[3:]
             if cleaned_text.endswith("```"):
                 cleaned_text = cleaned_text[:-3]
             cleaned_text = cleaned_text.strip()
 
-            parsed = json.loads(cleaned_text)
+            try:
+                parsed = json.loads(cleaned_text)
+            except json.JSONDecodeError:
+                # Attempt to extract outermost JSON object { ... }
+                start_idx = cleaned_text.find("{")
+                end_idx = cleaned_text.rfind("}")
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    parsed = json.loads(cleaned_text[start_idx : end_idx + 1])
+                else:
+                    raise
+
+            # Grounding and safety checks
+            summary = sanitize_text(parsed.get("summary", "Analysis completed."))
+            recommended_next_step = sanitize_text(parsed.get("recommended_next_step", "Review tool findings."))
+            supporting_evidence = [sanitize_text(s) for s in parsed.get("supporting_evidence", [])]
+            assumptions = [sanitize_text(s) for s in parsed.get("assumptions", [])]
+            limitations = [sanitize_text(s) for s in parsed.get("limitations", [])]
+            follow_up_actions = [sanitize_text(s) for s in parsed.get("follow_up_actions", [])]
+
+            # Enforce human-review safeguard
+            if not any("human review" in lim.lower() for lim in limitations):
+                limitations.append("Municipal human review required prior to operational dispatch or capital allocation.")
+
+            # Record success
+            self.last_inference_successful = True
+            self.last_error_category = None
+            self.last_error_reason = None
 
             return BedrockRecommendation(
-                summary=parsed.get("summary", "Analysis completed."),
-                recommended_next_step=parsed.get("recommended_next_step", "Review tool findings."),
-                supporting_evidence=parsed.get("supporting_evidence", []),
-                assumptions=parsed.get("assumptions", []),
-                limitations=parsed.get("limitations", []),
-                follow_up_actions=parsed.get("follow_up_actions", []),
+                summary=summary,
+                recommended_next_step=recommended_next_step,
+                supporting_evidence=supporting_evidence,
+                assumptions=assumptions,
+                limitations=limitations,
+                follow_up_actions=follow_up_actions,
                 model_id=self.model_id,
                 is_live_bedrock=True,
                 data_provenance=tool_output.get("data_label", "SYNTHETIC_DEV_DATASET"),
@@ -289,8 +482,12 @@ class BedrockService:
             )
 
         except (ClientError, BotoCoreError, EndpointConnectionError, ReadTimeoutError) as aws_err:
-            latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
-            logger.error("Bedrock API call failed: %s", aws_err)
+            category, reason = classify_aws_error(aws_err, model_id=self.model_id, region_name=self.region_name)
+            self.last_error_category = category
+            self.last_error_reason = reason
+            self.last_inference_successful = False
+            logger.error("Bedrock API call failed [%s]: %s", category, reason)
+
             return self._generate_dev_mode_synthesis(
                 report=report,
                 decider_action=decider_action,
@@ -298,11 +495,18 @@ class BedrockService:
                 missing_information=missing_information,
                 location=location,
                 start_time=start_time,
-                status_reason=f"Bedrock invocation failed: {type(aws_err).__name__}",
+                status_reason=reason,
+                status_category=category,
             )
-        except json.JSONDecodeError as json_err:
-            latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
-            logger.error("Failed to parse Bedrock JSON response: %s", json_err)
+
+        except (json.JSONDecodeError, Exception) as parse_err:
+            category = "formatting_error"
+            reason = f"Bedrock response formatting error ({type(parse_err).__name__})"
+            self.last_error_category = category
+            self.last_error_reason = reason
+            self.last_inference_successful = False
+            logger.error("Failed to parse Bedrock response: %s", sanitize_text(str(parse_err)))
+
             return self._generate_dev_mode_synthesis(
                 report=report,
                 decider_action=decider_action,
@@ -310,7 +514,8 @@ class BedrockService:
                 missing_information=missing_information,
                 location=location,
                 start_time=start_time,
-                status_reason=f"Bedrock response formatting error: {str(json_err)}",
+                status_reason=reason,
+                status_category=category,
             )
 
     def _generate_dev_mode_synthesis(
@@ -322,10 +527,12 @@ class BedrockService:
         location: Optional[str],
         start_time: float,
         status_reason: str,
+        status_category: str = "fallback",
     ) -> BedrockRecommendation:
         """
         Deterministic, transparent synthesis used when Amazon Bedrock is unconfigured or unavailable.
         Clearly labeled as DEV_MODE with is_live_bedrock=False to avoid fabricating LLM outputs.
+        Distinguishes supplied observations from assumptions and identifies missing measurements.
         """
         elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
         loc = location or tool_output.get("location_name", "Reported Zone")
@@ -333,15 +540,21 @@ class BedrockService:
 
         evidence: List[str] = []
         assumptions: List[str] = [
-            f"Execution conducted in Development Mode ({status_reason}).",
-            "All cited environmental values originate strictly from the selected tool execution."
+            f"Execution conducted in Development Fallback Mode ({status_reason}).",
+            "All cited environmental values originate strictly from the selected tool execution.",
         ]
         limitations: List[str] = list(tool_output.get("known_limitations", []))
-        limitations.append("Amazon Bedrock generative inference was not executed; recommendation is structured via deterministic rule-engine.")
+        limitations.append(
+            f"Fallback Reason: {status_reason}. Amazon Bedrock generative inference was not executed; recommendation is structured via deterministic rule-engine."
+        )
+        limitations.append("Municipal human review and field sensor ground-truthing are required before deployment.")
+
+        if missing_information:
+            limitations.append(f"Identified missing measurements: {', '.join(missing_information)}.")
 
         follow_up: List[str] = [
-            "Configure AWS credentials (e.g. AWS_ACCESS_KEY_ID or IAM role) to enable live Amazon Bedrock generative synthesis.",
-            "Verify ground telemetry with local sensors before municipal deployment."
+            f"Configure or refresh AWS credentials / verify Bedrock access ({status_reason}).",
+            "Verify ground telemetry with local sensors before municipal deployment.",
         ]
 
         # Extract specific evidence based on action
@@ -386,20 +599,21 @@ class BedrockService:
             recommended_step = "Review environmental assessment output."
 
         summary = (
-            f"[DEV MODE SYNTHESIS] {tool_summary} "
+            f"[DEV MODE SYNTHESIS - {status_reason}] {tool_summary} "
             f"Action selected by Strands Decider 2B was '{decider_action}'."
         )
 
         return BedrockRecommendation(
-            summary=summary,
-            recommended_next_step=recommended_step,
-            supporting_evidence=evidence,
-            assumptions=assumptions,
-            limitations=limitations,
-            follow_up_actions=follow_up,
-            model_id=f"{self.model_id} (dev_mode_fallback)",
+            summary=sanitize_text(summary),
+            recommended_next_step=sanitize_text(recommended_step),
+            supporting_evidence=[sanitize_text(e) for e in evidence],
+            assumptions=[sanitize_text(a) for a in assumptions],
+            limitations=[sanitize_text(l) for l in limitations],
+            follow_up_actions=[sanitize_text(f) for f in follow_up],
+            model_id=f"{self.model_id} (fallback: {status_category})",
             is_live_bedrock=False,
             data_provenance=tool_output.get("data_label", "SYNTHETIC_DEV_DATASET"),
             latency_ms=elapsed_ms,
             status="dev_mode_fallback",
+            fallback_reason=status_reason,
         )
