@@ -140,3 +140,104 @@ def test_dispatcher_handles_tool_internal_failure():
         assert resp.status == "error"
         assert "Simulated sensor failure" in resp.error_message
         assert resp.tool_name == "ANALYZE_HEAT"
+
+
+def test_analytical_tools_consume_context_measurements():
+    """All analytical tools must consume structured measurements passed in context instead of default sample values."""
+    custom_context = {
+        "data_source": "CUSTOM_SENSOR_NETWORK",
+        "dataset_label": "CUSTOM_TEST_DATASET_V2",
+        "ambient_temperature_c": 41.5,
+        "surface_temperature_c": 56.2,
+        "heat_index_c": 44.8,
+        "canopy_coverage_pct": 4.5,
+        "ndvi_index": 0.07,
+        "impervious_surface_pct": 92.0,
+        "daily_transit_commuters": 22000,
+        "transit_stops_count": 12,
+        "unshaded_waiting_areas": 7,
+    }
+
+    # 1. analyze_heat
+    heat_res = analyze_heat(
+        report="High radiant heat test",
+        location="Zone B",
+        context=custom_context,
+    )
+    assert heat_res.observed_ambient_temp_c == 41.5
+    assert heat_res.observed_surface_temp_c == 56.2
+    assert heat_res.heat_index_c == 44.8
+    assert heat_res.heat_severity_level == "EXTREME"
+    assert heat_res.location_name == "Zone B"
+    assert heat_res.data_label == "CUSTOM_TEST_DATASET_V2"
+
+    # 2. check_vegetation
+    veg_res = check_vegetation(
+        report="Canopy check",
+        location="Zone B",
+        context=custom_context,
+    )
+    assert veg_res.canopy_coverage_pct == 4.5
+    assert veg_res.canopy_deficit_pct == 25.5
+    assert veg_res.ndvi_index == 0.07
+    assert veg_res.impervious_surface_pct == 92.0
+    assert veg_res.deficit_classification == "CRITICAL_DEFICIT"
+    assert veg_res.data_label == "CUSTOM_TEST_DATASET_V2"
+
+    # 3. check_exposure
+    exp_res = check_exposure(
+        report="Exposure test",
+        location="Zone B",
+        context=custom_context,
+    )
+    assert exp_res.daily_transit_commuters == 22000
+    assert exp_res.unshaded_waiting_areas == 7
+    assert exp_res.transit_stops_count == 12
+    assert exp_res.overall_exposure_level == "CRITICAL_EXPOSURE"
+    assert exp_res.data_label == "CUSTOM_TEST_DATASET_V2"
+
+    # 4. compare_interventions
+    comp_res = compare_interventions(
+        report="Intervention test",
+        location="Zone B",
+        context=custom_context,
+    )
+    assert comp_res.location_name == "Zone B"
+    assert comp_res.data_label == "CUSTOM_TEST_DATASET_V2"
+    assert "Engineered Shade Structures" in comp_res.recommended_fast_track_intervention
+
+
+def test_request_more_data_reconciles_context_measurements():
+    """request_more_data must recognize supplied context measurements and only request remaining gaps."""
+    # Complete context: should NOT request ambient_temperature_reading or canopy_coverage_metric
+    complete_context = {
+        "ambient_temperature_c": 38.5,
+        "canopy_coverage_pct": 8.0,
+        "daily_transit_commuters": 12000,
+    }
+    result_complete = request_more_data(
+        report="General report without text specifics.",
+        location="Transit Plaza",
+        context=complete_context,
+    )
+    param_names = [p.parameter_name for p in result_complete.missing_parameters]
+    assert "ambient_temperature_reading" not in param_names
+    assert "canopy_coverage_metric" not in param_names
+    assert "pedestrian_exposure_density" not in param_names
+    # Advanced microclimate gap is recommended instead
+    assert "diurnal_temperature_profile" in param_names
+
+    # Incomplete context: missing ambient temperature
+    partial_context = {
+        "canopy_coverage_pct": 8.0,
+        "daily_transit_commuters": 12000,
+    }
+    result_partial = request_more_data(
+        report="No temperature mentions.",
+        location="Transit Plaza",
+        context=partial_context,
+    )
+    partial_params = [p.parameter_name for p in result_partial.missing_parameters]
+    assert "ambient_temperature_reading" in partial_params
+    assert "canopy_coverage_metric" not in partial_params
+    assert "pedestrian_exposure_density" not in partial_params

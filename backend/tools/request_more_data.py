@@ -44,12 +44,18 @@ def request_more_data(
     start_time = time.perf_counter()
     loc_data = lookup_sample_location(location or report)
     rep_lower = report.lower()
+    ctx = context or {}
 
     missing_params: List[MissingParameter] = []
     user_questions: List[str] = []
 
-    # Check temperature specificity
-    if not any(k in rep_lower for k in ["°c", "°f", "degrees", "celsius", "fahrenheit"]):
+    # Check temperature specificity in context or report
+    has_ambient = (
+        ctx.get("ambient_temperature_c") is not None
+        or ctx.get("ambient_temp_c") is not None
+    )
+    has_temp_in_report = any(k in rep_lower for k in ["°c", "°f", "degrees", "celsius", "fahrenheit"])
+    if not (has_ambient or has_temp_in_report):
         missing_params.append(
             MissingParameter(
                 parameter_name="ambient_temperature_reading",
@@ -60,8 +66,15 @@ def request_more_data(
         )
         user_questions.append("What specific peak daytime temperature or heat advisory tier was observed?")
 
-    # Check canopy/vegetation specificity
-    if not any(k in rep_lower for k in ["canopy", "ndvi", "tree cover", "vegetation percentage", "%"]):
+    # Check canopy/vegetation specificity in context or report
+    has_canopy = (
+        ctx.get("canopy_coverage_pct") is not None
+        or ctx.get("ndvi_index") is not None
+        or ctx.get("canopy_pct") is not None
+        or ctx.get("ndvi") is not None
+    )
+    has_canopy_in_report = any(k in rep_lower for k in ["canopy", "ndvi", "tree cover", "vegetation percentage", "%"])
+    if not (has_canopy or has_canopy_in_report):
         missing_params.append(
             MissingParameter(
                 parameter_name="canopy_coverage_metric",
@@ -72,8 +85,15 @@ def request_more_data(
         )
         user_questions.append("Can you estimate the approximate percentage of tree canopy or shade along the sidewalks?")
 
-    # Check exposure / vulnerable facility specifics
-    if not any(k in rep_lower for k in ["transit", "bus", "pedestrian", "school", "clinic", "elderly", "crowd"]):
+    # Check exposure / vulnerable facility specifics in context or report
+    has_exposure = (
+        ctx.get("daily_transit_commuters") is not None
+        or ctx.get("unshaded_waiting_areas") is not None
+        or ctx.get("transit_stops_count") is not None
+        or ctx.get("commuters") is not None
+    )
+    has_exposure_in_report = any(k in rep_lower for k in ["transit", "bus", "pedestrian", "school", "clinic", "elderly", "crowd"])
+    if not (has_exposure or has_exposure_in_report):
         missing_params.append(
             MissingParameter(
                 parameter_name="pedestrian_exposure_density",
@@ -85,16 +105,16 @@ def request_more_data(
         user_questions.append("Are there specific bus stops, schools, senior centers, or unshaded waiting zones nearby?")
 
     if not missing_params:
-        # Fallback if report was fairly detailed
+        # Core telemetry is supplied; identify advanced microclimate telemetry needs
         missing_params.append(
             MissingParameter(
-                parameter_name="ground_surface_material_survey",
+                parameter_name="diurnal_temperature_profile",
                 importance="MODERATE",
-                description="Pavement albedo and percentage of permeable vs impervious ground cover.",
-                suggested_source="Municipal street pavement inventory or high-resolution orthophotography."
+                description="Continuous 24-hour diurnal microclimate telemetry to quantify nocturnal heat retention.",
+                suggested_source="Localized IoT microclimate sensor logger or high-resolution thermal drone survey."
             )
         )
-        user_questions.append("Would you like to specify surface pavement types (e.g., black asphalt vs concrete) to refine cooling models?")
+        user_questions.append("Would you like to include 24-hour diurnal thermal profile measurements to refine nighttime cooling models?")
 
     telemetry_sources = [
         "NOAA Automated Surface Observing Systems (ASOS)",
@@ -103,8 +123,9 @@ def request_more_data(
         "USGS Landsat 9 Thermal Infrared Sensor (TIRS-2)"
     ]
 
+    location_name = location or loc_data["name"]
     summary = (
-        f"Data completeness review for report on '{loc_data['name']}': Identified {len(missing_params)} "
+        f"Data completeness review for report on '{location_name}': Identified {len(missing_params)} "
         f"missing or uncertain parameters necessary for robust environmental modeling. "
         "Formulated actionable clarification questions to prompt higher-fidelity observations."
     )
@@ -114,15 +135,17 @@ def request_more_data(
         "Public data sources may have latency ranging from 24 hours (satellite pass) to annual (LiDAR surveys)."
     ]
 
+    data_label = str(ctx.get("dataset_label") or ctx.get("data_source") or DATASET_METADATA["dataset_label"])
     elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     return ClarificationRequestResult(
         execution_time_ms=elapsed_ms,
-        location_name=loc_data["name"],
+        location_name=location_name,
         missing_parameters=missing_params,
         suggested_user_questions=user_questions,
         suggested_telemetry_sources=telemetry_sources,
         recommended_next_step="Request user clarification or pull automated regional weather telemetry.",
         analysis_summary=summary,
         known_limitations=limitations,
+        data_label=data_label,
     )

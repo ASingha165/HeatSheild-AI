@@ -8,10 +8,11 @@ calibrated tool routing in autonomous environmental intelligence agents.
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import time
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 # Strands Decider official types
@@ -102,6 +103,200 @@ class EnvironmentalStateBuilder:
     """Constructs structured state for Strands Decider from unstructured reports and observations."""
 
     @staticmethod
+    def normalize_measurements(
+        raw_context: Optional[Dict[str, Any]],
+    ) -> Tuple[Dict[str, Any], List[str]]:
+        """
+        Validates, normalizes, and extracts structured environmental measurements from context.
+        Returns a tuple of (normalized_dict, validation_errors).
+        """
+        if not raw_context or not isinstance(raw_context, dict):
+            return {}, []
+
+        normalized: Dict[str, Any] = {}
+        validation_issues: List[str] = []
+
+        # 1. Ambient Temperature (-50°C to 70°C)
+        ambient_raw = raw_context.get("ambient_temperature_c")
+        if ambient_raw is None:
+            ambient_raw = raw_context.get("ambient_temp_c")
+        if ambient_raw is not None:
+            try:
+                ambient_val = float(ambient_raw)
+                if -50.0 <= ambient_val <= 70.0:
+                    normalized["ambient_temperature_c"] = round(ambient_val, 2)
+                else:
+                    validation_issues.append(
+                        f"ambient_temperature_c value {ambient_val}°C is unphysical (expected between -50°C and 70°C)"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"ambient_temperature_c value '{ambient_raw}' is not a valid numeric float"
+                )
+
+        # 2. Surface Temperature (-50°C to 100°C)
+        surface_raw = raw_context.get("surface_temperature_c")
+        if surface_raw is None:
+            surface_raw = raw_context.get("surface_temp_c")
+        if surface_raw is not None:
+            try:
+                surface_val = float(surface_raw)
+                if -50.0 <= surface_val <= 100.0:
+                    normalized["surface_temperature_c"] = round(surface_val, 2)
+                else:
+                    validation_issues.append(
+                        f"surface_temperature_c value {surface_val}°C is unphysical (expected between -50°C and 100°C)"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"surface_temperature_c value '{surface_raw}' is not a valid numeric float"
+                )
+
+        # 3. Heat Index (-50°C to 100°C)
+        hi_raw = raw_context.get("heat_index_c")
+        if hi_raw is None:
+            hi_raw = raw_context.get("heat_index")
+        if hi_raw is not None:
+            try:
+                hi_val = float(hi_raw)
+                if -50.0 <= hi_val <= 100.0:
+                    normalized["heat_index_c"] = round(hi_val, 2)
+                else:
+                    validation_issues.append(
+                        f"heat_index_c value {hi_val}°C is unphysical (expected between -50°C and 100°C)"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"heat_index_c value '{hi_raw}' is not a valid numeric float"
+                )
+
+        # 4. Canopy Coverage Percentage (0.0% to 100.0%)
+        canopy_raw = raw_context.get("canopy_coverage_pct")
+        if canopy_raw is None:
+            canopy_raw = raw_context.get("canopy_pct")
+        if canopy_raw is not None:
+            try:
+                canopy_val = float(canopy_raw)
+                if 0.0 <= canopy_val <= 100.0:
+                    normalized["canopy_coverage_pct"] = round(canopy_val, 2)
+                else:
+                    validation_issues.append(
+                        f"canopy_coverage_pct value {canopy_val}% is out of valid range [0.0, 100.0]"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"canopy_coverage_pct value '{canopy_raw}' is not a valid numeric float"
+                )
+
+        # 5. NDVI Index (-1.0 to 1.0)
+        ndvi_raw = raw_context.get("ndvi_index")
+        if ndvi_raw is None:
+            ndvi_raw = raw_context.get("ndvi")
+        if ndvi_raw is not None:
+            try:
+                ndvi_val = float(ndvi_raw)
+                if -1.0 <= ndvi_val <= 1.0:
+                    normalized["ndvi_index"] = round(ndvi_val, 4)
+                else:
+                    validation_issues.append(
+                        f"ndvi_index value {ndvi_val} is out of valid range [-1.0, 1.0]"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"ndvi_index value '{ndvi_raw}' is not a valid numeric float"
+                )
+
+        # 6. Impervious Surface Percentage (0.0% to 100.0%)
+        impervious_raw = raw_context.get("impervious_surface_pct")
+        if impervious_raw is None:
+            impervious_raw = raw_context.get("impervious_pct")
+        if impervious_raw is not None:
+            try:
+                imp_val = float(impervious_raw)
+                if 0.0 <= imp_val <= 100.0:
+                    normalized["impervious_surface_pct"] = round(imp_val, 2)
+                else:
+                    validation_issues.append(
+                        f"impervious_surface_pct value {imp_val}% is out of valid range [0.0, 100.0]"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"impervious_surface_pct value '{impervious_raw}' is not a valid numeric float"
+                )
+
+        # 7. Daily Transit Commuters (non-negative integer)
+        commuters_raw = raw_context.get("daily_transit_commuters")
+        if commuters_raw is None:
+            commuters_raw = raw_context.get("commuters")
+        if commuters_raw is not None:
+            try:
+                commuters_val = int(commuters_raw)
+                if commuters_val >= 0:
+                    normalized["daily_transit_commuters"] = commuters_val
+                else:
+                    validation_issues.append(
+                        f"daily_transit_commuters value {commuters_val} must be non-negative"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"daily_transit_commuters value '{commuters_raw}' is not a valid integer"
+                )
+
+        # 8. Transit Stops Count (non-negative integer)
+        stops_raw = raw_context.get("transit_stops_count")
+        if stops_raw is None:
+            stops_raw = raw_context.get("transit_stops")
+        if stops_raw is not None:
+            try:
+                stops_val = int(stops_raw)
+                if stops_val >= 0:
+                    normalized["transit_stops_count"] = stops_val
+                else:
+                    validation_issues.append(
+                        f"transit_stops_count value {stops_val} must be non-negative"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"transit_stops_count value '{stops_raw}' is not a valid integer"
+                )
+
+        # 9. Unshaded Waiting Areas (non-negative integer)
+        unshaded_raw = raw_context.get("unshaded_waiting_areas")
+        if unshaded_raw is None:
+            unshaded_raw = raw_context.get("unshaded_stops")
+        if unshaded_raw is not None:
+            try:
+                unshaded_val = int(unshaded_raw)
+                if unshaded_val >= 0:
+                    normalized["unshaded_waiting_areas"] = unshaded_val
+                else:
+                    validation_issues.append(
+                        f"unshaded_waiting_areas value {unshaded_val} must be non-negative"
+                    )
+            except (ValueError, TypeError):
+                validation_issues.append(
+                    f"unshaded_waiting_areas value '{unshaded_raw}' is not a valid integer"
+                )
+
+        # 10. Vulnerable Facilities (list of dicts)
+        facs_raw = raw_context.get("vulnerable_facilities")
+        if facs_raw is not None:
+            if isinstance(facs_raw, list):
+                normalized["vulnerable_facilities"] = facs_raw
+            else:
+                validation_issues.append("vulnerable_facilities must be a list of facility objects")
+
+        # 11. Metadata / Provenance
+        if "data_source" in raw_context and raw_context["data_source"] is not None:
+            normalized["data_source"] = str(raw_context["data_source"]).strip()
+        if "dataset_label" in raw_context and raw_context["dataset_label"] is not None:
+            normalized["dataset_label"] = str(raw_context["dataset_label"]).strip()
+        if "purpose" in raw_context and raw_context["purpose"] is not None:
+            normalized["purpose"] = str(raw_context["purpose"]).strip()
+
+        return normalized, validation_issues
+
+    @staticmethod
     def build_state(
         report: str,
         location: Optional[str] = None,
@@ -111,31 +306,138 @@ class EnvironmentalStateBuilder:
         missing_information: Optional[List[str]] = None,
         extra_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Constructs an environmental state representation."""
+        """Constructs a normalized, truthful environmental state representation for Strands Decider."""
+        normalized, validation_issues = EnvironmentalStateBuilder.normalize_measurements(extra_context)
+        low_rep = report.lower()
+
+        # Build temperature_observations if not provided
+        if temperature_observations is None:
+            temp_parts: List[str] = []
+            if "ambient_temperature_c" in normalized:
+                temp_parts.append(f"Ambient temperature: {normalized['ambient_temperature_c']}°C")
+            if "surface_temperature_c" in normalized:
+                temp_parts.append(f"Surface temperature: {normalized['surface_temperature_c']}°C")
+            if "heat_index_c" in normalized:
+                temp_parts.append(f"Heat index: {normalized['heat_index_c']}°C")
+            elif "ambient_temperature_c" in normalized and "surface_temperature_c" in normalized:
+                derived_hi = round(
+                    normalized["ambient_temperature_c"]
+                    + max(2.0, (normalized["surface_temperature_c"] - normalized["ambient_temperature_c"]) * 0.25),
+                    1,
+                )
+                temp_parts.append(f"Heat index: {derived_hi}°C (estimated)")
+
+            if temp_parts:
+                temperature_observations = "; ".join(temp_parts) + "."
+            elif any(k in low_rep for k in ["heat", "hot", "warm", "temperature", "°c", "celsius", "fahrenheit"]):
+                temperature_observations = (
+                    "Report narrative references elevated thermal conditions; specific calibrated sensor telemetry not provided."
+                )
+            else:
+                temperature_observations = "No sensor telemetry available in report."
+
+        # Build vegetation_indicators if not provided
+        if vegetation_indicators is None:
+            veg_parts: List[str] = []
+            if "canopy_coverage_pct" in normalized:
+                veg_parts.append(f"Canopy coverage: {normalized['canopy_coverage_pct']}%")
+            if "ndvi_index" in normalized:
+                veg_parts.append(f"NDVI: {normalized['ndvi_index']}")
+            if "impervious_surface_pct" in normalized:
+                veg_parts.append(f"Impervious surface: {normalized['impervious_surface_pct']}%")
+
+            if veg_parts:
+                vegetation_indicators = "; ".join(veg_parts) + "."
+            elif any(k in low_rep for k in ["tree", "canopy", "shade", "vegetation", "grass", "park"]):
+                vegetation_indicators = (
+                    "Report narrative references limited tree canopy and vegetation; quantitative coverage metric not provided."
+                )
+            else:
+                vegetation_indicators = "No vegetation metrics provided."
+
+        # Build exposure_indicators if not provided
+        if exposure_indicators is None:
+            exp_parts: List[str] = []
+            if "daily_transit_commuters" in normalized:
+                exp_parts.append(f"Daily transit commuters: {normalized['daily_transit_commuters']:,}")
+            if "unshaded_waiting_areas" in normalized:
+                exp_parts.append(f"Unshaded waiting areas: {normalized['unshaded_waiting_areas']}")
+            if "transit_stops_count" in normalized:
+                exp_parts.append(f"Transit stops: {normalized['transit_stops_count']}")
+            if "vulnerable_facilities" in normalized and normalized["vulnerable_facilities"]:
+                exp_parts.append(f"Vulnerable facilities: {len(normalized['vulnerable_facilities'])} nearby")
+
+            if exp_parts:
+                exposure_indicators = "; ".join(exp_parts) + "."
+            elif any(k in low_rep for k in ["transit", "commuter", "pedestrian", "bus", "waiting", "elderly", "crowd", "school"]):
+                exposure_indicators = (
+                    "Report narrative indicates pedestrian transit activity; specific commuter counts not provided."
+                )
+            else:
+                exposure_indicators = "No population exposure details provided."
+
+        # Identify inferred missing information if none provided
+        if missing_information is None:
+            inferred_missing: List[str] = []
+
+            # 1. Temperature: Check normalized measurement or numeric report keyword
+            has_ambient = "ambient_temperature_c" in normalized
+            has_rep_temp = any(k in low_rep for k in ["°c", "°f", "degrees", "celsius", "fahrenheit"]) or bool(
+                re.search(r"\b\d+(\.\d+)?\s*(°\s*[cf]|[cf]\b|deg)", low_rep)
+            )
+            if not (has_ambient or has_rep_temp):
+                if any("ambient_temperature_c" in err for err in validation_issues):
+                    inferred_missing.append(
+                        "Specific ambient temperature measurement (supplied value was invalid or unphysical)"
+                    )
+                else:
+                    inferred_missing.append("Specific ambient temperature measurement")
+
+            # 2. Vegetation: Check normalized canopy/ndvi or quantitative report keyword
+            has_canopy = "canopy_coverage_pct" in normalized or "ndvi_index" in normalized
+            has_rep_canopy = any(k in low_rep for k in ["canopy", "ndvi", "vegetation percentage", "tree cover"]) and (
+                "%" in low_rep or bool(re.search(r"\b\d+(\.\d+)?\s*(percent|%)", low_rep))
+            )
+            if not (has_canopy or has_rep_canopy):
+                if any("canopy_coverage_pct" in err or "ndvi_index" in err for err in validation_issues):
+                    inferred_missing.append("Quantitative canopy coverage metric (supplied value was invalid)")
+                else:
+                    inferred_missing.append("Quantitative canopy coverage metric")
+
+            # 3. Exposure: Check normalized commuters/stops or quantitative report keyword
+            has_exposure = (
+                "daily_transit_commuters" in normalized
+                or "unshaded_waiting_areas" in normalized
+                or "transit_stops_count" in normalized
+            )
+            has_rep_exposure = any(k in low_rep for k in ["pedestrians", "transit", "population", "commuters", "seniors"]) and (
+                bool(re.search(r"\b\d{2,}\b", low_rep))
+            )
+            if not (has_exposure or has_rep_exposure):
+                if any("daily_transit_commuters" in err or "unshaded" in err for err in validation_issues):
+                    inferred_missing.append(
+                        "Pedestrian density or demographic vulnerability indicators (supplied value was invalid)"
+                    )
+                else:
+                    inferred_missing.append("Pedestrian density or demographic vulnerability indicators")
+
+            missing_information = inferred_missing
+
         state: Dict[str, Any] = {
             "report": report.strip(),
             "location": location.strip() if location else "Unspecified location",
-            "temperature_observations": temperature_observations or "No sensor telemetry available in report.",
-            "vegetation_indicators": vegetation_indicators or "No vegetation metrics provided.",
-            "exposure_indicators": exposure_indicators or "No population exposure details provided.",
-            "missing_information": missing_information or [],
+            "temperature_observations": temperature_observations,
+            "vegetation_indicators": vegetation_indicators,
+            "exposure_indicators": exposure_indicators,
+            "missing_information": missing_information,
             "available_tools": [action.value for action in AnalyticalAction],
         }
 
         if extra_context:
             state["extra_context"] = extra_context
-
-        # Identify inferred missing information if none provided
-        if not missing_information:
-            inferred_missing: List[str] = []
-            low_rep = report.lower()
-            if not any(k in low_rep for k in ["°c", "°f", "degrees", "celsius", "fahrenheit"]):
-                inferred_missing.append("Specific ambient temperature measurement")
-            if not any(k in low_rep for k in ["canopy", "ndvi", "vegetation percentage", "tree cover"]):
-                inferred_missing.append("Quantitative canopy coverage metric")
-            if not any(k in low_rep for k in ["pedestrians", "transit", "population", "commuters", "seniors"]):
-                inferred_missing.append("Pedestrian density or demographic vulnerability indicators")
-            state["missing_information"] = inferred_missing
+        state["normalized_measurements"] = normalized
+        if validation_issues:
+            state["validation_issues"] = validation_issues
 
         return state
 

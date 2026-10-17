@@ -430,3 +430,62 @@ def test_get_unknown_report_returns_404():
     """GET /api/reports/non-existent-id returns 404."""
     response = client.get("/api/reports/non-existent-id")
     assert response.status_code == 404
+
+
+def test_analyze_report_with_structured_extra_context_measurements():
+    """POST /api/reports/analyze must accurately ingest, normalize, and propagate structured measurements."""
+    extra = {
+        "data_source": "SYNTHETIC_DEMO",
+        "dataset_label": "SYNTHETIC_DEV_DATASET_V1",
+        "ambient_temperature_c": 38.2,
+        "surface_temperature_c": 51.0,
+        "canopy_coverage_pct": 6.5,
+        "ndvi_index": 0.12,
+        "impervious_surface_pct": 88.0,
+        "daily_transit_commuters": 14500,
+        "transit_stops_count": 8,
+        "unshaded_waiting_areas": 5,
+    }
+    payload = {
+        "report": "Demonstration scenario: Transit plaza has high pavement heat, low canopy, and high commuter exposure.",
+        "location": "Downtown Central Transit Plaza",
+        "confidence_threshold": 0.60,
+        "extra_context": extra,
+    }
+
+    response = client.post("/api/reports/analyze", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    # 1. State construction audit
+    state_summary = data["decision"]["state_summary"]
+    assert "38.2°C" in state_summary["temperature_observations"]
+    assert "51.0°C" in state_summary["temperature_observations"]
+    assert "No sensor telemetry available in report" not in state_summary["temperature_observations"]
+
+    assert "6.5%" in state_summary["vegetation_indicators"]
+    assert "0.12" in state_summary["vegetation_indicators"]
+    assert "No vegetation metrics provided" not in state_summary["vegetation_indicators"]
+
+    assert "14,500" in state_summary["exposure_indicators"]
+    assert "No population exposure details provided" not in state_summary["exposure_indicators"]
+
+    # 2. Reconciled missing information
+    assert state_summary["missing_information"] == []
+
+    # 3. Execution trace confirms state construction
+    trace_steps = {s["name"]: s for s in data["execution_trace"]}
+    assert "State Construction" in trace_steps
+    assert trace_steps["State Construction"]["status"] == "completed"
+
+    # 4. If an analytical tool executed, verify it consumed normalized measurements
+    if data["tool_execution"] and data["tool_execution"]["status"] == "success":
+        tool_out = data["tool_execution"]["output"]
+        if data["decision"]["decision"] == "ANALYZE_HEAT":
+            assert tool_out["observed_ambient_temp_c"] == 38.2
+            assert tool_out["observed_surface_temp_c"] == 51.0
+        elif data["decision"]["decision"] == "CHECK_VEGETATION":
+            assert tool_out["canopy_coverage_pct"] == 6.5
+            assert tool_out["ndvi_index"] == 0.12
+        elif data["decision"]["decision"] == "CHECK_EXPOSURE":
+            assert tool_out["daily_transit_commuters"] == 14500

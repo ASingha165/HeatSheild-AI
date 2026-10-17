@@ -174,3 +174,166 @@ def test_confidence_threshold_override():
     d2 = selector.select_action({"report": "heat"}, confidence_threshold_override=0.75)
     assert d2.status == DecisionStatus.REQUIRES_CLARIFICATION
     assert d2.execution_gate == ExecutionGate.REQUEST_HUMAN_CLARIFICATION
+
+
+def test_state_builder_complete_synthetic_measurements():
+    """State builder must recognize structured extra_context measurements and populate state correctly."""
+    extra = {
+        "data_source": "SYNTHETIC_DEMO",
+        "dataset_label": "SYNTHETIC_DEV_DATASET_V1",
+        "ambient_temperature_c": 38.2,
+        "surface_temperature_c": 51.0,
+        "canopy_coverage_pct": 6.5,
+        "ndvi_index": 0.12,
+        "impervious_surface_pct": 88.0,
+        "daily_transit_commuters": 14500,
+        "transit_stops_count": 8,
+        "unshaded_waiting_areas": 5,
+    }
+    report = (
+        "SYNTHETIC DEMONSTRATION: Transit corridor with hot pavement, low canopy, and high transit rider density. "
+        "Assess environmental conditions and mitigation options."
+    )
+    state = EnvironmentalStateBuilder.build_state(
+        report=report,
+        location="Downtown Central Transit Plaza",
+        extra_context=extra,
+    )
+
+    # Core measurements must be in normalized dictionary
+    assert state["normalized_measurements"]["ambient_temperature_c"] == 38.2
+    assert state["normalized_measurements"]["surface_temperature_c"] == 51.0
+    assert state["normalized_measurements"]["canopy_coverage_pct"] == 6.5
+    assert state["normalized_measurements"]["ndvi_index"] == 0.12
+    assert state["normalized_measurements"]["impervious_surface_pct"] == 88.0
+    assert state["normalized_measurements"]["daily_transit_commuters"] == 14500
+
+    # Typed state strings must reflect actual normalized values
+    assert "38.2°C" in state["temperature_observations"]
+    assert "51.0°C" in state["temperature_observations"]
+    assert "No sensor telemetry available in report" not in state["temperature_observations"]
+
+    assert "6.5%" in state["vegetation_indicators"]
+    assert "0.12" in state["vegetation_indicators"]
+    assert "88.0%" in state["vegetation_indicators"]
+    assert "No vegetation metrics provided" not in state["vegetation_indicators"]
+
+    assert "14,500" in state["exposure_indicators"]
+    assert "5" in state["exposure_indicators"]
+    assert "No population exposure details provided" not in state["exposure_indicators"]
+
+    # No core telemetry gaps should be flagged as missing
+    assert state["missing_information"] == []
+
+
+def test_state_builder_missing_ambient_temperature():
+    """When ambient temperature is not supplied in extra_context or report, it must be flagged."""
+    extra = {
+        "canopy_coverage_pct": 12.0,
+        "daily_transit_commuters": 4000,
+    }
+    report = "The commercial avenue has several bus stops and limited tree canopy."
+    state = EnvironmentalStateBuilder.build_state(
+        report=report,
+        location="Commercial Ave",
+        extra_context=extra,
+    )
+
+    assert "Specific ambient temperature measurement" in state["missing_information"]
+    assert "Quantitative canopy coverage metric" not in state["missing_information"]
+    assert "Pedestrian density or demographic vulnerability indicators" not in state["missing_information"]
+    assert "No sensor telemetry available in report" in state["temperature_observations"]
+    assert "12.0%" in state["vegetation_indicators"]
+    assert "4,000" in state["exposure_indicators"]
+
+
+def test_state_builder_missing_vegetation_measurements():
+    """When vegetation indicators are omitted, canopy metrics must be flagged as missing."""
+    extra = {
+        "ambient_temperature_c": 36.5,
+        "daily_transit_commuters": 6500,
+    }
+    report = "High temperatures observed near transit stop."
+    state = EnvironmentalStateBuilder.build_state(
+        report=report,
+        location="Suburban Hub",
+        extra_context=extra,
+    )
+
+    assert "Quantitative canopy coverage metric" in state["missing_information"]
+    assert "Specific ambient temperature measurement" not in state["missing_information"]
+    assert "Pedestrian density or demographic vulnerability indicators" not in state["missing_information"]
+    assert "36.5°C" in state["temperature_observations"]
+    assert "No vegetation metrics provided" in state["vegetation_indicators"]
+    assert "6,500" in state["exposure_indicators"]
+
+
+def test_state_builder_missing_exposure_indicators():
+    """When commuter and transit density are omitted, exposure indicators must be flagged as missing."""
+    extra = {
+        "ambient_temperature_c": 39.0,
+        "canopy_coverage_pct": 5.0,
+    }
+    report = "High surface temperatures observed in open industrial parking."
+    state = EnvironmentalStateBuilder.build_state(
+        report=report,
+        location="Industrial Park",
+        extra_context=extra,
+    )
+
+    assert "Pedestrian density or demographic vulnerability indicators" in state["missing_information"]
+    assert "Specific ambient temperature measurement" not in state["missing_information"]
+    assert "Quantitative canopy coverage metric" not in state["missing_information"]
+    assert "39.0°C" in state["temperature_observations"]
+    assert "5.0%" in state["vegetation_indicators"]
+    assert "No population exposure details provided" in state["exposure_indicators"]
+
+
+def test_state_builder_invalid_numeric_values():
+    """Invalid numeric values must be flagged in validation_issues and missing_information without crashing."""
+    extra = {
+        "ambient_temperature_c": "not_a_valid_number",
+        "surface_temperature_c": 999.0,  # Unphysical (> 100°C)
+        "canopy_coverage_pct": 175.0,    # Out of range (> 100%)
+        "daily_transit_commuters": -250, # Negative count
+    }
+    report = "Sensor node transmission."
+    state = EnvironmentalStateBuilder.build_state(
+        report=report,
+        location="Test Station",
+        extra_context=extra,
+    )
+
+    # Invalid values must not be accepted into normalized measurements
+    assert "ambient_temperature_c" not in state["normalized_measurements"]
+    assert "surface_temperature_c" not in state["normalized_measurements"]
+    assert "canopy_coverage_pct" not in state["normalized_measurements"]
+    assert "daily_transit_commuters" not in state["normalized_measurements"]
+
+    # Issues must be catalogued
+    assert len(state["validation_issues"]) == 4
+
+    # Corresponding missing indicators must be flagged with invalid notes
+    missing = state["missing_information"]
+    assert any("Specific ambient temperature measurement" in m for m in missing)
+    assert any("Quantitative canopy coverage metric" in m for m in missing)
+    assert any("Pedestrian density" in m for m in missing)
+
+
+def test_state_builder_explicit_synthetic_provenance():
+    """Explicit synthetic metadata in extra_context must be preserved for compliance and auditability."""
+    extra = {
+        "data_source": "SYNTHETIC_DEMO",
+        "dataset_label": "SYNTHETIC_DEV_DATASET_V1",
+        "purpose": "Post-integration test",
+        "ambient_temperature_c": 35.0,
+    }
+    state = EnvironmentalStateBuilder.build_state(
+        report="Synthetic test scenario.",
+        location="Downtown Plaza",
+        extra_context=extra,
+    )
+
+    assert state["normalized_measurements"]["data_source"] == "SYNTHETIC_DEMO"
+    assert state["normalized_measurements"]["dataset_label"] == "SYNTHETIC_DEV_DATASET_V1"
+    assert state["normalized_measurements"]["purpose"] == "Post-integration test"

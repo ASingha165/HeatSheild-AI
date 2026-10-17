@@ -54,9 +54,13 @@ def compare_interventions(
     start_time = time.perf_counter()
     loc_data = lookup_sample_location(location or report)
     metrics = loc_data["synthetic_measurements"]
+    ctx = context or {}
     
-    canopy = float(metrics.get("canopy_coverage_pct", 10.0))
-    unshaded = int(metrics.get("unshaded_waiting_areas", 2))
+    canopy_raw = ctx.get("canopy_coverage_pct", ctx.get("canopy_pct"))
+    canopy = float(canopy_raw) if canopy_raw is not None else float(metrics.get("canopy_coverage_pct", 10.0))
+
+    unshaded_raw = ctx.get("unshaded_waiting_areas", ctx.get("unshaded_stops"))
+    unshaded = int(unshaded_raw) if unshaded_raw is not None else int(metrics.get("unshaded_waiting_areas", 2))
 
     options: List[InterventionOption] = [
         InterventionOption(
@@ -164,8 +168,9 @@ def compare_interventions(
         recommended_fast = "High-Albedo Cool Roofs & Solar-Reflective Pavements"
         recommended_primary = "Targeted Urban Tree Canopy Expansion"
 
+    location_name = location or loc_data["name"]
     summary = (
-        f"Comparative intervention evaluation for {loc_data['name']}: "
+        f"Comparative intervention evaluation for {location_name}: "
         f"Immediate thermal protection is best achieved via '{recommended_fast}' (immediate 5.2°C surface relief), "
         f"while sustainable long-term resilience requires '{recommended_primary}' to counteract the {canopy}% canopy deficit."
     )
@@ -176,14 +181,16 @@ def compare_interventions(
         "Microclimate wind velocity effects on convective cooling are simplified in linear deltas."
     ]
 
+    data_label = str(ctx.get("dataset_label") or ctx.get("data_source") or DATASET_METADATA["dataset_label"])
     elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     return InterventionComparisonResult(
         execution_time_ms=elapsed_ms,
-        location_name=loc_data["name"],
+        location_name=location_name,
         recommended_primary_intervention=recommended_primary,
         recommended_fast_track_intervention=recommended_fast,
         interventions=options,
         comparison_matrix_summary=summary,
         known_limitations=limitations,
+        data_label=data_label,
     )

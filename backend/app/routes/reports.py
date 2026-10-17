@@ -197,11 +197,15 @@ def analyze_report(
 
     # Step 4: Execute Selected Analytical Tool (Gate: PROCEED_TO_TOOL)
     step_start = time.perf_counter()
+    tool_context = dict(payload.extra_context or {})
+    if "normalized_measurements" in state:
+        tool_context.update(state["normalized_measurements"])
+
     tool_resp = dispatch_tool(
         action=decision.decision,
         report=payload.report,
         location=payload.location,
-        context=payload.extra_context,
+        context=tool_context,
     )
     step4_duration = round((time.perf_counter() - step_start) * 1000, 2)
     trace.append(
