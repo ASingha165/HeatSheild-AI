@@ -43,6 +43,7 @@ dist-ssr/
 # IDE & OS
 .vscode/
 .idea/
+.vercel/
 *.swp
 *.swo
 .DS_Store

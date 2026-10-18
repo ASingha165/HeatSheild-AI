@@ -15,9 +15,30 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
-# Strands Decider official types
-from strands_decider.schema import ChoiceQuestion, SystemOneRequest, SystemOneResponse
-from strands_decider.infer import SystemOneEngine, load_engine
+# Strands Decider types with serverless/lightweight fallback
+try:
+    from strands_decider.schema import ChoiceQuestion, SystemOneRequest, SystemOneResponse
+    from strands_decider.infer import SystemOneEngine, load_engine
+    HAS_STRANDS_DECIDER = True
+except (ImportError, ModuleNotFoundError):
+    HAS_STRANDS_DECIDER = False
+    SystemOneEngine = None
+    load_engine = None
+
+    class ChoiceQuestion(BaseModel):  # type: ignore[no-redef]
+        type: str = "choice"
+        instructions: Any
+        criteria: Dict[str, str]
+
+    class SystemOneRequest(BaseModel):  # type: ignore[no-redef]
+        state: Any
+        questions: Dict[str, Any] = Field(..., min_length=1)
+        model: str = "strands-decider-latest"
+
+    class SystemOneResponse(BaseModel):  # type: ignore[no-redef]
+        model: str = "strands-decider-latest"
+        answers: Dict[str, Any]
+        usage: Optional[Dict[str, Any]] = None
 
 logger = logging.getLogger("heatshield.patterns.tool_selection")
 if not logger.handlers:
@@ -534,6 +555,16 @@ class ConfidenceAwareToolSelector:
             verified = self._verify_remote_engine()
             self._engine_initialized = verified
             return verified
+
+        if not HAS_STRANDS_DECIDER or load_engine is None:
+            logger.info(
+                "Strands Decider in-process weights engine is not installed in this environment "
+                "(e.g. Vercel Serverless Function). To enable Decider 2B inference on Vercel, "
+                "configure DECIDER_REMOTE_URL."
+            )
+            self._engine = None
+            self._engine_initialized = False
+            return False
 
         with self._init_lock:
             if self._engine is not None:

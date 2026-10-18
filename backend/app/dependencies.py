@@ -41,12 +41,18 @@ def set_tool_selector(selector: ConfidenceAwareToolSelector) -> None:
 
 
 def get_bedrock_service() -> BedrockService:
-    """Dependency provider returning the BedrockService instance."""
+    """Dependency provider returning the BedrockService instance configured from environment variables."""
     global _bedrock_service
     if _bedrock_service is None:
         region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
         model_id = os.getenv("BEDROCK_MODEL_ID", "global.amazon.nova-2-lite-v1:0")
-        _bedrock_service = BedrockService(region_name=region, model_id=model_id)
+        temperature_env = os.getenv("BEDROCK_TEMPERATURE")
+        temperature = float(temperature_env) if temperature_env is not None else 0.2
+        _bedrock_service = BedrockService(
+            region_name=region,
+            model_id=model_id,
+            temperature=temperature,
+        )
     return _bedrock_service
 
 

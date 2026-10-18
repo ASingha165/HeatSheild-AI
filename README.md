@@ -96,6 +96,33 @@ npm run dev
 
 ---
 
+## ▲ Deploying on Vercel
+
+HeatShield AI is configured for one-click full-stack deployment on Vercel combining the Vite React SPA and FastAPI Python serverless functions.
+
+- **Vercel Entrypoint**: `api/index.py` handles all `/api/*` endpoints.
+- **Frontend Build**: Vite compiles to `frontend/dist/` and is served via Vercel Edge CDN.
+- **Configuration**: Managed automatically via [`vercel.json`](vercel.json).
+
+### Vercel Environment Variables
+
+Set these in your **Vercel Project Settings > Environment Variables**:
+
+| Variable | Required | Description |
+| :--- | :---: | :--- |
+| `AWS_REGION` | **Yes** | AWS Region for Bedrock (e.g. `us-east-1`) |
+| `BEDROCK_MODEL_ID` | **Yes** | Bedrock Model ID (default: `global.amazon.nova-2-lite-v1:0`) |
+| `BEDROCK_TEMPERATURE` | No | Sampling temperature (default: `0.2`) |
+| `AWS_ACCESS_KEY_ID` | **Yes\*** | Server-side AWS credentials |
+| `AWS_SECRET_ACCESS_KEY` | **Yes\*** | Server-side AWS secret access key |
+| `AWS_SESSION_TOKEN` | Optional | Session token if using temporary workshop credentials |
+| `DECIDER_REMOTE_URL` | Optional | Remote Strands Decider 2B endpoint for live model inference |
+| `ENVIRONMENT` | No | `production` |
+
+For complete deployment details and execution limit considerations, see [docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md).
+
+---
+
 ## 🧪 Testing
 
 ### Running Backend Tests

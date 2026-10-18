@@ -56,7 +56,7 @@ export const App: React.FC = () => {
     } catch (err: any) {
       if (!silent) {
         setApiError(
-          `Backend API connection error: ${err.message}. Ensure backend is running at http://127.0.0.1:8000.`
+          `Backend API connection error: ${err.message}. Ensure the backend service is reachable.`
         );
       }
     } finally {

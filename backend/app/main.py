@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.dependencies import get_bedrock_service, get_tool_selector
@@ -49,8 +49,9 @@ app = FastAPI(
     ),
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 # CORS configuration for Vite React frontend
@@ -80,6 +81,35 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(health_router, prefix="/api")
 app.include_router(locations_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
+
+
+@app.get("/api")
+@app.get("/api/")
+def api_root():
+    """Root metadata for HeatShield AI API on Vercel."""
+    return {
+        "name": "HeatShield AI API",
+        "version": "1.0.0",
+        "status": "online",
+        "docs": "/api/docs",
+        "endpoints": [
+            "/api/health",
+            "/api/config/status",
+            "/api/locations",
+            "/api/reports/analyze",
+            "/api/docs",
+        ],
+    }
+
+
+@app.get("/docs", include_in_schema=False)
+def docs_redirect():
+    return RedirectResponse(url="/api/docs")
+
+
+@app.get("/redoc", include_in_schema=False)
+def redoc_redirect():
+    return RedirectResponse(url="/api/redoc")
 
 
 FRONTEND_DIST_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
