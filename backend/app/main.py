@@ -7,9 +7,11 @@ from __future__ import annotations
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.app.dependencies import get_bedrock_service, get_tool_selector
 from backend.app.routes.health import router as health_router
@@ -80,20 +82,43 @@ app.include_router(locations_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 
 
-@app.get("/")
-def root():
-    return {
-        "name": "HeatShield AI API",
-        "version": "1.0.0",
-        "status": "online",
-        "docs": "/docs",
-        "endpoints": [
-            "/api/health",
-            "/api/config/status",
-            "/api/locations",
-            "/api/reports/analyze",
-        ],
-    }
+FRONTEND_DIST_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
+    logger.info("Serving compiled production frontend from: %s", FRONTEND_DIST_DIR)
+    if (FRONTEND_DIST_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST_DIR / "assets")), name="frontend_assets")
+
+    @app.get("/")
+    def serve_frontend_root():
+        return FileResponse(str(FRONTEND_DIST_DIR / "index.html"))
+
+    @app.get("/{full_path:path}")
+    def serve_frontend_spa(full_path: str):
+        if full_path.startswith("api/") or full_path in ("api", "docs", "redoc", "openapi.json"):
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"error": "NotFound", "detail": f"Route /{full_path} not found"}
+            )
+        file_path = FRONTEND_DIST_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(FRONTEND_DIST_DIR / "index.html"))
+else:
+    @app.get("/")
+    def root():
+        return {
+            "name": "HeatShield AI API",
+            "version": "1.0.0",
+            "status": "online",
+            "docs": "/docs",
+            "endpoints": [
+                "/api/health",
+                "/api/config/status",
+                "/api/locations",
+                "/api/reports/analyze",
+            ],
+        }
 
 
 if __name__ == "__main__":
