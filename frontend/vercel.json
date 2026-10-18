@@ -1,13 +1,8 @@
 {
-  "headers": [
+  "rewrites": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Vercel-Root-Dir",
-          "value": "FRONTEND"
-        }
-      ]
+      "source": "/((?!api(?:/|$)).*)",
+      "destination": "/index.html"
     }
   ]
 }
