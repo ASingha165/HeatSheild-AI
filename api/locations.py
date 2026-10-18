@@ -1,6 +1,5 @@
 """
-HeatShield AI - Dedicated Vercel Serverless Function for /api/locations.
-Guarantees location response whether path is /api/locations, /locations, or /.
+HeatShield AI - Serverless Function for /api/locations
 """
 
 from __future__ import annotations
@@ -35,3 +34,5 @@ app.add_middleware(
 @app.get("/", response_model=LocationsResponse)
 def locations_endpoint():
     return get_sample_locations()
+
+handler = app

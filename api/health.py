@@ -1,6 +1,5 @@
 """
-HeatShield AI - Dedicated Vercel Serverless Function for /api/health.
-Guarantees a healthy response whether path is /api/health, /health, or /.
+HeatShield AI - Serverless Function for /api/health
 """
 
 from __future__ import annotations
@@ -18,8 +17,8 @@ os.environ.setdefault("ENVIRONMENT", "production")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.dependencies import get_bedrock_service, get_tool_selector
-from backend.app.routes.health import get_health, get_config_status
-from backend.app.schemas import HealthResponse, SystemConfigResponse
+from backend.app.routes.health import get_health
+from backend.app.schemas import HealthResponse
 
 app = FastAPI(title="HeatShield AI Health Check")
 
@@ -39,9 +38,4 @@ def health_endpoint():
     bedrock = get_bedrock_service()
     return get_health(selector=selector, bedrock=bedrock)
 
-@app.get("/api/config/status", response_model=SystemConfigResponse)
-@app.get("/config/status", response_model=SystemConfigResponse)
-def config_status_endpoint():
-    selector = get_tool_selector()
-    bedrock = get_bedrock_service()
-    return get_config_status(selector=selector, bedrock=bedrock)
+handler = app
