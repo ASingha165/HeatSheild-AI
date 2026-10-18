@@ -6,22 +6,6 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/health.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/locations.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/config/status.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/reports/analyze.py",
-      "use": "@vercel/python"
-    },
-    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -30,22 +14,6 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/health",
-      "dest": "api/health.py"
-    },
-    {
-      "src": "/api/locations",
-      "dest": "api/locations.py"
-    },
-    {
-      "src": "/api/config/status",
-      "dest": "api/config/status.py"
-    },
-    {
-      "src": "/api/reports/analyze",
-      "dest": "api/reports/analyze.py"
-    },
     {
       "src": "/api/(.*)",
       "dest": "api/index.py"
