@@ -77,10 +77,14 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Mount routers under /api
+# Mount routers under /api and root (guarantees both /api/* and /* resolve in serverless runtimes)
 app.include_router(health_router, prefix="/api")
 app.include_router(locations_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
+
+app.include_router(health_router)
+app.include_router(locations_router)
+app.include_router(reports_router)
 
 
 @app.get("/api")
