@@ -34,7 +34,8 @@ mcp==2.1.1
 mcp-types==2.1.1
 mdurl==0.1.2
 mpmath==1.3.0
-networkx==3.7
+networkx==3.7; python_version >= '3.12'
+networkx==3.4.2; python_version < '3.12'
 numpy==2.5.4
 opentelemetry-api==1.45.1
 opentelemetry-instrumentation==0.66b1
