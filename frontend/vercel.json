@@ -1,0 +1,13 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Vercel-Root-Dir",
+          "value": "FRONTEND"
+        }
+      ]
+    }
+  ]
+}
