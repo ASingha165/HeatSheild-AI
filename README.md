@@ -44,6 +44,16 @@ graph TD
 
 ---
 
+## 🌐 Live Deployment
+
+* **Production URL (Live & Verified)**: [https://heat-sheild-ai.vercel.app/](https://heat-sheild-ai.vercel.app/)
+* **Domain Alias**: [https://heat-shield-ai.vercel.app/](https://heat-shield-ai.vercel.app/) *(Configure in Vercel Project Settings > Domains)*
+* **Live Health Check**: [`GET /api/health`](https://heat-sheild-ai.vercel.app/api/health)
+* **Live System Status**: [`GET /api/config/status`](https://heat-sheild-ai.vercel.app/api/config/status)
+* **Live Monitored Zones**: [`GET /api/locations`](https://heat-sheild-ai.vercel.app/api/locations)
+
+---
+
 ## ☁️ Amazon Bedrock Configuration
 
 HeatShield AI uses the standard `boto3` Bedrock Runtime `converse` API. Configuration is dynamically loaded via environment variables:
